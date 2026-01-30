@@ -817,7 +817,7 @@ async def txt_handler(bot: Client, m: Message):
                     # DRM response (MPD + KEYS)
                     if isinstance(data, dict) and "KEYS" in data and "MPD" in data:
                         mpd = data.get("MPD")
-                        keys = data.get("KEYS", [])
+                        keys = data.get("KEYS") or []
                         url = mpd
                         keys_string = " ".join([f"--key {k}" for k in keys])
             

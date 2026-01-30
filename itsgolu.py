@@ -83,6 +83,7 @@ def get_mps_and_keys(api_url):
     keys = response_json.get('keys')
     return mpd, keys
 
+get_mps_and_keys2 = get_mps_and_keys
 
    
 def exec(cmd):
