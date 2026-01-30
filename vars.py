@@ -13,21 +13,21 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "mongodb+srv://itsgoluAPI:jrMHSipT
 MONGO_URL = DATABASE_URL  # For auth system
 
 # Owner and Admin Configuration
-owner_id_str = os.environ.get("OWNER_ID", "8457494001")
+owner_id_str = os.environ.get("OWNER_ID", "")
 if not owner_id_str:
-    owner_id_str = os.environ.get("OWNER", "8457494001")
+    owner_id_str = os.environ.get("OWNER", "0")
 
 try:
     OWNER_ID = int(owner_id_str)
 except ValueError:
     OWNER_ID = 0
 
-ADMINS = [int(x) for x in os.environ.get("ADMINS", "8457494001").split()]  # Default to owner ID
+ADMINS = [int(x) for x in os.environ.get("ADMINS", "").split()]  # Default to owner ID
 
 # Channel Configuration
 PREMIUM_CHANNEL = ""
 # Thumbnail Configuration
-THUMBNAILS = list(map(str, os.environ.get("THUMBNAILS", "https://files.catbox.moe/2j7q2d.jpg").split())) # Image Link For Default Thumbnail 
+THUMBNAILS = list(map(str, os.environ.get("THUMBNAILS", "").split())) # Image Link For Default Thumbnail
 
 # Web Server Configuration
 WEB_SERVER = os.environ.get("WEB_SERVER", "False").lower() == "true"
@@ -67,7 +67,6 @@ Please contact the admin to get access.</blockquote>""",
 
 <blockquote>Use format: {format}</blockquote>"""
 }
-
 
 
 

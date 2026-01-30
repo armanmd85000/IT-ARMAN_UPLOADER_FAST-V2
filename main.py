@@ -483,6 +483,9 @@ async def txt_handler(bot: Client, m: Message):
         content = content.split("\n")
         content = [line.strip() for line in content if line.strip()]  # Remove empty lines
         
+        # Logging parsed links
+        print("--- PARSED LINKS START ---")
+
         # Debug: Print number of lines
         print(f"Number of lines: {len(content)}")
         
@@ -516,7 +519,9 @@ async def txt_handler(bot: Client, m: Message):
                         
         # Debug: Print found links
         print(f"Found links: {len(links)}")
-        
+        for i, link_data in enumerate(links):
+             print(f"Link {i}: Name='{link_data[0]}', URL='{link_data[1]}'")
+        print("--- PARSED LINKS END ---")
 
         
     except UnicodeDecodeError:
@@ -719,6 +724,8 @@ async def txt_handler(bot: Client, m: Message):
             url = "https://" + Vxy
             link0 = "https://" + Vxy
 
+            print(f"Processing Index {i}: Initial URL = {url}")
+
             name1 = links[i][0].replace("(", "[").replace(")", "]").replace("_", "").replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
             if "," in raw_text3:
                  name = f'{PRENAME} {name1[:60]}'
@@ -788,9 +795,13 @@ async def txt_handler(bot: Client, m: Message):
                 user_id = m.from_user.id
 
             elif any(x in url for x in ["https://cpvod.testbook.com/", "classplusapp.com/drm/", "media-cdn.classplusapp.com", "media-cdn-alisg.classplusapp.com", "media-cdn-a.classplusapp.com", "tencdn.classplusapp", "videos.classplusapp", "webvideos.classplusapp.com"]):
+                print(f"Matched Classplus domain in URL: {url}")
                 # normalize cpvod -> media-cdn path used by API
                 url_norm = url.replace("https://cpvod.testbook.com/", "https://media-cdn.classplusapp.com/drm/")
                 api_url_call = f"https://cptest-ecru.vercel.app/ITsGOLU_OFFICIAL?url={url_norm}"
+
+                print(f"API Call: {api_url_call}")
+
                 keys_string = ""
                 mpd = None
                 try:
@@ -798,7 +809,9 @@ async def txt_handler(bot: Client, m: Message):
                     # parse JSON safely
                     try:
                         data = resp.json()
-                    except Exception:
+                        print(f"API Response: {data}")
+                    except Exception as e:
+                        print(f"JSON Parse Error: {e}")
                         data = None
             
                     # DRM response (MPD + KEYS)
@@ -812,8 +825,10 @@ async def txt_handler(bot: Client, m: Message):
                     elif isinstance(data, dict) and "url" in data:
                         url = data.get("url")
                         keys_string = ""
+                        print(f"Updated URL from API: {url}")
             
                     else:
+                        print("Unexpected response format, trying helper fallback...")
                         # Unexpected response format — fallback to helper
                         try:
                             res = helper.get_mps_and_keys2(url_norm)
@@ -823,9 +838,11 @@ async def txt_handler(bot: Client, m: Message):
                                 keys_string = " ".join([f"--key {k}" for k in keys])
                             else:
                                 keys_string = ""
-                        except Exception:
+                        except Exception as e:
+                            print(f"Helper fallback failed: {e}")
                             keys_string = ""
-                except Exception:
+                except Exception as e:
+                    print(f"API request failed: {e}")
                     # API failed — attempt helper fallback
                     try:
                         res = helper.get_mps_and_keys2(url_norm)
