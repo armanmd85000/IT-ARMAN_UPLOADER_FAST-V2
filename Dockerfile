@@ -31,11 +31,11 @@ RUN wget -q https://github.com/axiomatic-systems/Bento4/archive/refs/tags/v1.6.0
     && rm -rf Bento4-1.6.0-639 v1.6.0-639.zip
 
 # Copy requirements file first to leverage Docker cache
-COPY itsgolubots.txt .
+COPY requirements.txt .
 
 # Install Python dependencies with optimized flags
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir --upgrade -r itsgolubots.txt \
+    && pip install --no-cache-dir --upgrade -r requirements.txt \
     && pip install --no-cache-dir --upgrade "yt-dlp[default]"
 
 # Copy the rest of the application
@@ -61,5 +61,6 @@ CMD gunicorn --bind 0.0.0.0:${PORT:-8000} \
     app:app & \
     aria2c --enable-rpc --rpc-listen-all --daemon=true && \
     python3 main.py
+
 
 
