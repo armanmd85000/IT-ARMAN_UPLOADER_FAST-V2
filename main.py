@@ -22,6 +22,13 @@ import aiohttp
 import aiofiles
 import requests
 import asyncio
+
+# Fix event loop for newer Python versions (Heroku + Pyrogram)
+try:
+    asyncio.get_running_loop()
+except RuntimeError:
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
 import ffmpeg
 import m3u8
 import cloudscraper
