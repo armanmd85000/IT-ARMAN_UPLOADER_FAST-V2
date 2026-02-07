@@ -882,4 +882,14 @@ async def back_to_start_callback(client, callback_query: CallbackQuery):
     )
 
 print("Bot Started...")
-bot.run()
+try:
+    bot.run()
+except FloodWait as e:
+    print(f"❌ Telegram FloodWait Error: Must wait {e.value} seconds.")
+    # Log to system so Heroku/user can see it
+    logging.error(f"❌ Telegram FloodWait Error: Must wait {e.value} seconds.")
+    # Exit cleanly to stop restart loop (Heroku will restart anyway, but maybe slower)
+    sys.exit(1)
+except Exception as e:
+    print(f"❌ Critical Error: {e}")
+    sys.exit(1)
