@@ -2,6 +2,7 @@ import os
 import re
 import time
 import requests
+import aiofiles
 import aiohttp
 import asyncio
 import cloudscraper
@@ -80,7 +81,26 @@ async def process_links(
         )
         cchtml = f'[🌐]Html Id : {str(count).zfill(3)}\n**Html Title :** `{name1} .html`\n<blockquote><b>Batch Name :</b> {batch_name}</blockquote>\n\n**Extracted by➤**{CR}\n'
 
-        # Google Drive / Docs Handling
+        # Google Docs Handling (Try Export)
+        if "docs.google.com/document/d/" in url:
+             try:
+                 doc_id = url.split("document/d/")[1].split("/")[0]
+                 export_url = f"https://docs.google.com/document/d/{doc_id}/export?format=pdf"
+                 async with aiohttp.ClientSession() as session:
+                    async with session.get(export_url) as resp:
+                        if resp.status == 200:
+                            f = await aiofiles.open(f"{name}.pdf", mode='wb')
+                            await f.write(await resp.read())
+                            await f.close()
+                            await client.send_document(chat_id=channel_id, document=f"{name}.pdf", caption=cc1)
+                            os.remove(f"{name}.pdf")
+                            count += 1
+                            success_count += 1
+                            continue
+             except Exception:
+                 pass # Fallback to manual note
+
+        # Google Drive / Docs Handling (Manual Note Fallback)
         if "drive.google.com" in url or "docs.google.com" in url:
             try:
                 # Guess file type from context or just generic
