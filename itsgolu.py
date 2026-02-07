@@ -412,14 +412,27 @@ async def send_vid(bot: Client, m: Message, cc, filename, thumb, name, prog, cha
         if thumb in ["/d", "no"] or not os.path.exists(thumb):
             temp_thumb = f"downloads/thumb_{os.path.basename(filename)}.jpg"
             
-            # Generate thumbnail at 10s
+            # Determine thumbnail timestamp (10% of duration or 1s if unknown)
+            vid_dur = get_duration(filename)
+            thumb_time = "00:00:01"
+            if vid_dur > 0:
+                 if vid_dur > 20:
+                     thumb_time = "00:00:10"
+                 else:
+                     thumb_time = time.strftime('%H:%M:%S', time.gmtime(vid_dur * 0.1))
+
+            # Generate thumbnail
             subprocess.run(
-                f'ffmpeg -i "{filename}" -ss 00:00:10 -vframes 1 -q:v 2 -y "{temp_thumb}"',
+                f'ffmpeg -i "{filename}" -ss {thumb_time} -vframes 1 -q:v 2 -y "{temp_thumb}"',
                 shell=True
             )
 
+            # Fallback if ffmpeg failed to make a thumbnail (e.g. audio only or corrupt)
+            if not os.path.exists(temp_thumb):
+                 temp_thumb = None
+
             # ✅ Only apply watermark if watermark != "/d"
-            if os.path.exists(temp_thumb) and (watermark and watermark.strip() != "/d"):
+            if temp_thumb and os.path.exists(temp_thumb) and (watermark and watermark.strip() != "/d"):
                 text_to_draw = watermark.strip()
                 try:
                     # Probe image width for better scaling
@@ -459,7 +472,7 @@ async def send_vid(bot: Client, m: Message, cc, filename, thumb, name, prog, cha
                 )
                 subprocess.run(text_cmd, shell=True)
             
-            thumbnail = temp_thumb if os.path.exists(temp_thumb) else None
+            thumbnail = temp_thumb if temp_thumb and os.path.exists(temp_thumb) else None
 
         await prog.delete(True)  # ⏳ Remove previous progress message
 
