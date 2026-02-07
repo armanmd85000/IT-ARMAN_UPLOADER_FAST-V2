@@ -571,3 +571,5 @@ async def send_vid(bot: Client, m: Message, cc, filename, thumb, name, prog, cha
 
     except Exception as err:
         raise Exception(f"send_vid failed: {err}")
+
+get_mps_and_keys2 = get_mps_and_keys
