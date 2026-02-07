@@ -376,7 +376,7 @@ async def process_links(
                 res_file = await helper.decrypt_and_merge_video(mpd, keys_string, path, name, resolution)
                 filename = res_file
                 await prog.delete(True)
-                if filename and os.path.exists(filename):
+                if filename and os.path.exists(filename) and os.path.getsize(filename) > 0:
                     await helper.send_vid(client, message, cc, filename, thumbnail, name, prog, channel_id, watermark=watermark)
                     count += 1
                 else:
@@ -389,7 +389,7 @@ async def process_links(
                 res_file = await helper.download_video(url, cmd, name)
                 filename = res_file
                 await prog.delete(True)
-                if filename and os.path.exists(filename):
+                if filename and os.path.exists(filename) and os.path.getsize(filename) > 0:
                     await helper.send_vid(client, message, cc, filename, thumbnail, name, prog, channel_id, watermark=watermark)
                     count += 1
                     time.sleep(1)

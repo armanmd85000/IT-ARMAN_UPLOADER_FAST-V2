@@ -29,13 +29,18 @@ from db import Database
 
 
 def get_duration(filename):
-    result = subprocess.run(
-        ["ffprobe", "-v", "error", "-show_entries",
-         "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", filename],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT
-    )
-    return float(result.stdout)
+    try:
+        result = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries",
+             "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", filename],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT
+        )
+        if not result.stdout:
+            return 0.0
+        return float(result.stdout)
+    except Exception:
+        return 0.0
 
 def split_large_video(file_path, max_size_mb=1900):
     size_bytes = os.path.getsize(file_path)
@@ -68,12 +73,17 @@ def split_large_video(file_path, max_size_mb=1900):
 
 
 def duration(filename):
-    result = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
-                             "format=duration", "-of",
-                             "default=noprint_wrappers=1:nokey=1", filename],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT)
-    return float(result.stdout)
+    try:
+        result = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
+                                 "format=duration", "-of",
+                                 "default=noprint_wrappers=1:nokey=1", filename],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
+        if not result.stdout:
+            return 0.0
+        return float(result.stdout)
+    except Exception:
+        return 0.0
 
 
 def get_mps_and_keys(api_url):
