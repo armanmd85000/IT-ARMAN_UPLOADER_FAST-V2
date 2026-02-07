@@ -89,6 +89,9 @@ async def batch_handler(client: Client, message: Message):
     except asyncio.TimeoutError:
         raw_text3 = '/d'
 
+    if raw_text3 == '/d':
+        raw_text3 = f"{CREDIT}"
+
     # Token
     await editable.edit(f"**1. Send PW Token For MPD urls\n 2. Send /d For Others **")
     try:

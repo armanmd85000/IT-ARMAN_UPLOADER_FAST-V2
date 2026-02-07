@@ -886,10 +886,11 @@ try:
     bot.run()
 except FloodWait as e:
     print(f"❌ Telegram FloodWait Error: Must wait {e.value} seconds.")
-    # Log to system so Heroku/user can see it
     logging.error(f"❌ Telegram FloodWait Error: Must wait {e.value} seconds.")
-    # Exit cleanly to stop restart loop (Heroku will restart anyway, but maybe slower)
-    sys.exit(1)
+    # Exit with 0 to prevent "Crashed" state, though app will still restart
+    sys.exit(0)
 except Exception as e:
     print(f"❌ Critical Error: {e}")
+    import traceback
+    traceback.print_exc()
     sys.exit(1)
