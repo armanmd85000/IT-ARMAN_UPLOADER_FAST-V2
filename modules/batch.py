@@ -22,8 +22,7 @@ async def batch_handler(client: Client, message: Message):
 
     while True:
         try:
-            # Short timeout to allow rapid message collection
-            input_msg: Message = await client.listen(chat_id, timeout=300)
+            input_msg: Message = await client.listen(chat_id)
 
             if input_msg.text:
                 if input_msg.text == "/done":
@@ -35,22 +34,10 @@ async def batch_handler(client: Client, message: Message):
                     await message.reply_text("❌ Batch cancelled.")
                     return
 
-            # Handle Media Groups (Albums) or Single Documents
-            if input_msg.media_group_id:
-                # If it's part of an album, we might receive multiple messages quickly.
-                # However, listen() grabs one at a time.
-                pass
-
             if input_msg.document and input_msg.document.file_name.endswith('.txt'):
-                # Download immediately.
-                # Note: For very large batches, downloading sequentially might be slow,
-                # but for text files it is negligible.
                 file_path = await input_msg.download()
                 files.append(file_path)
-                # Don't reply for EVERY file in a large batch to avoid spam/rate limits.
-                # Just edit the status message occasionally or log.
-                if len(files) % 5 == 0 or len(files) == 1:
-                     await message.reply_text(f"✅ Received {len(files)} files so far... Send `/done` when finished.")
+                await message.reply_text(f"✅ Received: `{input_msg.document.file_name}`\nTotal: {len(files)} files.\nSend more or `/done`.")
             else:
                  if input_msg.text != "/done":
                     await message.reply_text("⚠️ Please send a .txt file or /done.")
