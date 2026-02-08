@@ -912,37 +912,81 @@ async def txt_handler(bot: Client, m: Message):
 
             try:
                 cc = (
-    f"<b>🏷️ Iɴᴅᴇx ID  :</b> {str(count).zfill(3)}\n\n"
     f"<b>🎞️  Tɪᴛʟᴇ :</b> {name1} \n\n"
     f"<blockquote>📚  𝗕ᴀᴛᴄʜ : {b_name}</blockquote>"
     f"\n\n<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
 )
                 cc1 = (
-    f"<b>🏷️ Iɴᴅᴇx ID :</b> {str(count).zfill(3)}\n\n"
     f"<b>📑  Tɪᴛʟᴇ :</b> {name1} \n\n"
     f"<blockquote>📚  𝗕ᴀᴛᴄʜ : {b_name}</blockquote>"
     f"\n\n<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
 )
-                cczip = f'[📁]Zip Id : {str(count).zfill(3)}\n**Zip Title :** `{name1} .zip`\n<blockquote><b>Batch Name :</b> {b_name}</blockquote>\n\n**Extracted by➤**{CR}\n' 
+                cczip = (
+    f"<b>📁  Tɪᴛʟᴇ :</b> {name1} .zip\n\n"
+    f"<blockquote>📚  𝗕ᴀᴛᴄʜ : {b_name}</blockquote>"
+    f"\n\n<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
+)
                 ccimg = (
-    f"<b>🏷️ Iɴᴅᴇx ID <b>: {str(count).zfill(3)} \n\n"
     f"<b>🖼️  Tɪᴛʟᴇ</b> : {name1} \n\n"
     f"<blockquote>📚  𝗕ᴀᴛᴄʜ : {b_name}</blockquote>"
     f"\n\n<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
 )
-                ccm = f'[🎵]Audio Id : {str(count).zfill(3)}\n**Audio Title :** `{name1} .mp3`\n<blockquote><b>Batch Name :</b> {b_name}</blockquote>\n\n**Extracted by➤**{CR}\n'
-                cchtml = f'[🌐]Html Id : {str(count).zfill(3)}\n**Html Title :** `{name1} .html`\n<blockquote><b>Batch Name :</b> {b_name}</blockquote>\n\n**Extracted by➤**{CR}\n'
+                ccm = (
+    f"<b>🎵  Tɪᴛʟᴇ :</b> {name1} .mp3\n\n"
+    f"<blockquote>📚  𝗕ᴀᴛᴄʜ : {b_name}</blockquote>"
+    f"\n\n<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
+)
+                cchtml = (
+    f"<b>🌐  Tɪᴛʟᴇ :</b> {name1} .html\n\n"
+    f"<blockquote>📚  𝗕ᴀᴛᴄʜ : {b_name}</blockquote>"
+    f"\n\n<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
+)
                   
-                if "drive" in url:
+                if "drive.google.com" in url or "docs.google.com" in url:
                     try:
-                        ka = await helper.download(url, name)
-                        copy = await bot.send_document(chat_id=channel_id,document=ka, caption=cc1)
-                        count+=1
-                        os.remove(ka)
+                        download_success = False
+                        # Attempt automatic download for Google Docs
+                        if "/document/d/" in url:
+                            try:
+                                doc_id_match = re.search(r'/document/d/([a-zA-Z0-9-_]+)', url)
+                                if doc_id_match:
+                                    doc_id = doc_id_match.group(1)
+                                    export_url = f"https://docs.google.com/document/d/{doc_id}/export?format=pdf"
+                                    ka = await helper.download(export_url, name)
+                                    if os.path.exists(ka):
+                                        await bot.send_document(chat_id=channel_id, document=ka, caption=cc1)
+                                        count += 1
+                                        os.remove(ka)
+                                        download_success = True
+                            except Exception as e:
+                                print(f"Failed to download Google Doc: {e}")
+
+                        if not download_success:
+                            # Fallback to Manual Note
+                            note_type = "PDF"
+                            if "assignment" in name1.lower():
+                                note_type = "Assignment"
+
+                            manual_msg = (
+                                f"Lesson name: {name1}\n"
+                                f"lesson link: {url}\n"
+                                f"Note: Click the link to download {note_type}"
+                            )
+
+                            # Send to Channel
+                            await bot.send_message(chat_id=channel_id, text=manual_msg)
+                            # Send to User
+                            await bot.send_message(chat_id=m.chat.id, text=manual_msg)
+                            count += 1
+
                     except FloodWait as e:
                         await m.reply_text(str(e))
                         time.sleep(e.x)
-                        continue    
+                        continue
+                    except Exception as e:
+                        print(f"Error handling drive link: {e}")
+                        count += 1
+                        continue
   
                 elif ".pdf" in url:
                     if "cwmediabkt99" in url:
