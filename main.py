@@ -932,6 +932,59 @@ async def txt_handler(bot: Client, m: Message):
 )
                 ccm = f'[🎵]Audio Id : {str(count).zfill(3)}\n**Audio Title :** `{name1} .mp3`\n<blockquote><b>Batch Name :</b> {b_name}</blockquote>\n\n**Extracted by➤**{CR}\n'
                 cchtml = f'[🌐]Html Id : {str(count).zfill(3)}\n**Html Title :** `{name1} .html`\n<blockquote><b>Batch Name :</b> {b_name}</blockquote>\n\n**Extracted by➤**{CR}\n'
+
+                if "docs.google.com/document" in url:
+                    try:
+                        # Extract Doc ID
+                        doc_id_match = re.search(r'/d/([a-zA-Z0-9-_]+)', url)
+                        if doc_id_match:
+                            doc_id = doc_id_match.group(1)
+                            export_url = f"https://docs.google.com/document/d/{doc_id}/export?format=pdf"
+
+                            # Try to download
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(export_url) as resp:
+                                    if resp.status == 200:
+                                        # Success
+                                        pdf_path = f"{name}.pdf"
+                                        f = await aiofiles.open(pdf_path, mode='wb')
+                                        await f.write(await resp.read())
+                                        await f.close()
+
+                                        await bot.send_document(chat_id=channel_id, document=pdf_path, caption=cc1)
+                                        count += 1
+                                        pdf_count += 1 # Update stats
+                                        os.remove(pdf_path)
+                                        continue # Move to next link
+                                    else:
+                                        # Status not 200 (e.g. 403, 302 to login) -> Manual Note
+                                        raise Exception("Export failed")
+                        else:
+                            raise Exception("No Doc ID found")
+
+                    except Exception:
+                        # Fallback to Manual Note
+                        note_type = "PDF"
+                        if "assignment" in name.lower():
+                            note_type = "Assignment"
+                        elif "module" in name.lower():
+                            note_type = "Module"
+
+                        manual_note = (
+                            f"<b>Lesson Name:</b> {name}\n"
+                            f"<b>Lesson Link:</b> {url}\n"
+                            f"<b>Note:</b> Click the link to download {note_type} manually."
+                        )
+
+                        # Send to Channel
+                        await bot.send_message(chat_id=channel_id, text=manual_note)
+                        # Send to User (if different)
+                        if channel_id != m.chat.id:
+                             await bot.send_message(chat_id=m.chat.id, text=manual_note)
+
+                        count += 1
+                        # Do not increment failed_count as this is a handled fallback
+                        continue
                   
                 if "drive" in url:
                     try:
