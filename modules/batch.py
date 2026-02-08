@@ -11,22 +11,23 @@ async def batch_handler(client: Client, message: Message):
     chat_id = message.chat.id
 
     # 1. Collect Files
-    files = []
+    batch_messages = []
     editable = await message.reply_text(
         "**Multi-File Batch Mode**\n\n"
         "Please send the `.txt` files you want to process.\n"
-        "Send as many as you want.\n"
+        "You can send multiple files at once (album/bulk).\n"
         "When finished, send `/done` to start processing.\n"
         "Send `/cancel` to abort."
     )
 
     while True:
         try:
+            # We use a short timeout to check for messages, or wait for next message
             input_msg: Message = await client.listen(chat_id)
 
             if input_msg.text:
                 if input_msg.text == "/done":
-                    if not files:
+                    if not batch_messages:
                         await message.reply_text("❌ No files received. Send files first.")
                         continue
                     break
@@ -34,10 +35,13 @@ async def batch_handler(client: Client, message: Message):
                     await message.reply_text("❌ Batch cancelled.")
                     return
 
+            # Queue Message Object
             if input_msg.document and input_msg.document.file_name.endswith('.txt'):
-                file_path = await input_msg.download()
-                files.append(file_path)
-                await message.reply_text(f"✅ Received: `{input_msg.document.file_name}`\nTotal: {len(files)} files.\nSend more or `/done`.")
+                batch_messages.append(input_msg)
+
+                # Feedback every 5 files to avoid flood wait during bulk send
+                if len(batch_messages) % 5 == 0 or len(batch_messages) == 1:
+                     await message.reply_text(f"✅ Received {len(batch_messages)} files so far... Send `/done` when finished.", quote=False)
             else:
                  if input_msg.text != "/done":
                     await message.reply_text("⚠️ Please send a .txt file or /done.")
@@ -45,6 +49,20 @@ async def batch_handler(client: Client, message: Message):
         except asyncio.TimeoutError:
             await message.reply_text("❌ Timeout. Batch cancelled.")
             return
+
+    # Download Files after /done
+    await editable.edit(f"📥 **Downloading {len(batch_messages)} files... Please wait.**")
+    files = []
+    for msg in batch_messages:
+        try:
+            file_path = await msg.download()
+            files.append(file_path)
+        except Exception as e:
+            await message.reply_text(f"❌ Failed to download {msg.document.file_name}: {e}")
+
+    if not files:
+        await message.reply_text("❌ No files downloaded successfully. Aborting.")
+        return
 
     # 2. Collect Settings (Once for all files)
 
