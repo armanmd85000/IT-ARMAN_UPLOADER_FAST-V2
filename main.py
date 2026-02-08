@@ -19,6 +19,7 @@ import pytz
 
 # 📦 Third-party Libraries
 import aiohttp
+from aiohttp import ClientSession
 import aiofiles
 import requests
 import asyncio
@@ -482,55 +483,8 @@ async def txt_handler(bot: Client, m: Message):
     try:    
         # Read file content with explicit encoding
         with open(x, "r", encoding='utf-8') as f:
-            content = f.read()
+            full_content = f.read()
             
-        # Debug: Print file content
-        print(f"File content: {content[:500]}...")  # Print first 500 chars
-            
-        content = content.split("\n")
-        content = [line.strip() for line in content if line.strip()]  # Remove empty lines
-        
-        # Logging parsed links
-        print("--- PARSED LINKS START ---")
-
-        # Debug: Print number of lines
-        print(f"Number of lines: {len(content)}")
-        
-        links = []
-        for i in content:
-            if "://" in i:
-                parts = i.split("://", 1)
-                if len(parts) == 2:
-                    name = parts[0]
-                    url = parts[1]
-                    links.append([name, url])
-                    
-                if ".pdf" in url:
-                    pdf_count += 1
-                elif url.endswith((".png", ".jpeg", ".jpg")):
-                    img_count += 1
-                elif "v2" in url:
-                    v2_count += 1
-                elif "mpd" in url:
-                    mpd_count += 1
-                elif "m3u8" in url:
-                    m3u8_count += 1
-                elif "drm" in url:
-                    drm_count += 1
-                elif "youtu" in url:
-                    yt_count += 1
-                elif "zip" in url:
-                    zip_count += 1
-                else:
-                    other_count += 1
-                        
-        # Debug: Print found links
-        print(f"Found links: {len(links)}")
-        for i, link_data in enumerate(links):
-             print(f"Link {i}: Name='{link_data[0]}', URL='{link_data[1]}'")
-        print("--- PARSED LINKS END ---")
-
-        
     except UnicodeDecodeError:
         await m.reply_text("<b>❌ File encoding error! Please make sure the file is saved with UTF-8 encoding.</b>")
         os.remove(x)
@@ -539,14 +493,75 @@ async def txt_handler(bot: Client, m: Message):
         await m.reply_text(f"<b>🔹Error reading file: {str(e)}</b>")
         os.remove(x)
         return
+
+    # Split content into batches
+    raw_batches = full_content.split("##### Batch End Here #####")
+    batches = []
+
+    for idx, raw_batch in enumerate(raw_batches):
+        lines = [line.strip() for line in raw_batch.split('\n') if line.strip()]
+        if not lines:
+            continue
+
+        # Parse Batch Name
+        batch_name = None
+        first_line = lines[0]
+
+        # Check for "Name : URL" format in the first line
+        # User specified: "Only take the Course name which is the left side of the first link before : after the Batch end here message"
+        if " : " in first_line and "http" in first_line.split(" : ")[1]:
+            batch_name = first_line.split(" : ")[0].strip()
+            # Remove the first line from links processing as it is the batch header
+            lines = lines[1:]
+
+        batch_links = []
+        for line in lines:
+            if "://" in line:
+                parts = line.split("://", 1)
+                if len(parts) == 2:
+                    name = parts[0].strip()
+                    url = parts[1].strip()
+                    batch_links.append([name, url])
+
+        if batch_links:
+            batches.append({
+                "name": batch_name,
+                "links": batch_links
+            })
+
+    # Stats for the FIRST batch (for display purposes during setup)
+    first_batch_links = batches[0]["links"] if batches else []
     
+    # Calculate stats for the first batch to show to user
+    for link_data in first_batch_links:
+        url = link_data[1]
+        if ".pdf" in url:
+            pdf_count += 1
+        elif url.endswith((".png", ".jpeg", ".jpg")):
+            img_count += 1
+        elif "v2" in url:
+            v2_count += 1
+        elif "mpd" in url:
+            mpd_count += 1
+        elif "m3u8" in url:
+            m3u8_count += 1
+        elif "drm" in url:
+            drm_count += 1
+        elif "youtu" in url:
+            yt_count += 1
+        elif "zip" in url:
+            zip_count += 1
+        else:
+            other_count += 1
+
     await editable.edit(
-    f"**Total 🔗 links found are {len(links)}\n"
+    f"**Total Batches found: {len(batches)}\n"
+    f"First Batch Links: {len(first_batch_links)}\n"
     f"ᴘᴅғ : {pdf_count}   ɪᴍɢ : {img_count}   ᴠ𝟸 : {v2_count} \n"
     f"ᴢɪᴘ : {zip_count}   ᴅʀᴍ : {drm_count}   ᴍ𝟹ᴜ𝟾 : {m3u8_count}\n"
     f"ᴍᴘᴅ : {mpd_count}   ʏᴛ : {yt_count}\n"
     f"Oᴛʜᴇʀꜱ : {other_count}\n\n"
-    f"Send Your Index File ID Between 1-{len(links)} .**",
+    f"Send Your Index File ID Between 1-{len(first_batch_links)} (Only for 1st batch).**",
   
 )
     
@@ -559,15 +574,15 @@ async def txt_handler(bot: Client, m: Message):
     except asyncio.TimeoutError:
         raw_text = '1'
     
-    if int(raw_text) > len(links) :
-        await editable.edit(f"**🔹Enter number in range of Index (01-{len(links)})**")
+    if int(raw_text) > len(first_batch_links) :
+        await editable.edit(f"**🔹Enter number in range of Index (01-{len(first_batch_links)})**")
         processing_request = False  # Reset the processing flag
         await m.reply_text("**🔹Exiting Task......  **")
         return
     
     chat_id = editable.chat.id
     timeout_duration = 3 if auto_flags.get(chat_id) else 20
-    await editable.edit(f"**1. Enter Batch Name\n2.Send /d For TXT Batch Name**")
+    await editable.edit(f"**1. Enter Batch Name (Default/Fallback)\n2.Send /d For TXT Batch Name**")
     try:
         input1: Message = await bot.listen(editable.chat.id, timeout=timeout_duration)
         raw_text0 = input1.text
@@ -575,10 +590,7 @@ async def txt_handler(bot: Client, m: Message):
     except asyncio.TimeoutError:
         raw_text0 = '/d'
     
-    if raw_text0 == '/d':
-        b_name = file_name.replace('_', ' ')
-    else:
-        b_name = raw_text0
+    fallback_b_name = file_name.replace('_', ' ') if raw_text0 == '/d' else raw_text0
     
     chat_id = editable.chat.id
     timeout_duration = 3 if auto_flags.get(chat_id) else 20
@@ -707,41 +719,63 @@ async def txt_handler(bot: Client, m: Message):
     await editable.delete()
 
     try:
-        if raw_text == "1":
-            batch_message = await bot.send_message(chat_id=channel_id, text=f"<blockquote><b>🎯Target Batch : {b_name}</b></blockquote>")
-            if "/d" not in raw_text7:
-                await bot.send_message(chat_id=m.chat.id, text=f"<blockquote><b><i>🎯Target Batch : {b_name}</i></b></blockquote>\n\n🔄 Your Task is under processing, please check your Set Channel📱. Once your task is complete, I will inform you 📩")
-                await bot.send_message(chat_id=m.chat.id, text=f"<blockquote><b><i>🎯Target Batch : {b_name}</i></b></blockquote>\n\n🔄 Your Task is under processing, please check your Set Channel📱. Once your task is complete, I will inform you 📩")
-                await bot.pin_chat_message(channel_id, batch_message.id)
-                message_id = batch_message.id + 1
-                await bot.delete_messages(channel_id, message_id)
-                await bot.pin_chat_message(channel_id, message_id)
-        else:
-             if "/d" not in raw_text7:
-                await bot.send_message(chat_id=m.chat.id, text=f"<blockquote><b><i>🎯Target Batch : {b_name}</i></b></blockquote>\n\n🔄 Your Task is under processing, please check your Set Channel📱. Once your task is complete, I will inform you 📩")
+        await bot.send_message(chat_id=m.chat.id, text=f"<blockquote><b><i>🎯Processing {len(batches)} batches...</i></b></blockquote>\n\n🔄 Your Task is under processing, please check your Set Channel📱.")
     except Exception as e:
         await m.reply_text(f"**Fail Reason »**\n<blockquote><i>{e}</i></blockquote>\n\n✦𝐁𝐨𝐭 𝐌𝐚𝐝𝐞 𝐁𝐲 ✦ {CREDIT}🌟`")
 
-    failed_count = 0
-    count =int(raw_text)    
-    arg = int(raw_text)
-    try:
-        for i in range(arg-1, len(links)):
-            Vxy = links[i][1].replace("file/d/","uc?export=download&id=").replace("www.youtube-nocookie.com/embed", "youtu.be").replace("?modestbranding=1", "").replace("/view?usp=sharing","")
-            url = "https://" + Vxy
-            link0 = "https://" + Vxy
+    # Outer loop for batches
+    for batch_idx, batch_data in enumerate(batches):
+        b_name = batch_data["name"] if batch_data["name"] else fallback_b_name
+        links = batch_data["links"]
 
-            print(f"Processing Index {i}: Initial URL = {url}")
+        # Determine start index
+        # For first batch: use user input (arg). For subsequent: 1
+        if batch_idx == 0:
+            count = int(raw_text)
+            arg = int(raw_text)
+        else:
+            count = 1
+            arg = 1
 
-            name1 = links[i][0].replace("(", "[").replace(")", "]").replace("_", "").replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
-            if "," in raw_text3:
-                 name = f'{PRENAME} {name1[:60]}'
-            else:
-                 name = f'{name1[:60]}'
-                 
-            user_id = m.from_user.id
-            
-            if "visionias" in url:
+        # Reset counters for this batch
+        failed_count = 0
+        pdf_count = 0
+        img_count = 0
+        v2_count = 0
+        mpd_count = 0
+        m3u8_count = 0
+        yt_count = 0
+        drm_count = 0
+        zip_count = 0
+        other_count = 0
+
+        # Send Batch Start Message
+        try:
+            batch_message = await bot.send_message(chat_id=channel_id, text=f"<blockquote><b>🎯Starting Batch {batch_idx+1}/{len(batches)} : {b_name}</b></blockquote>")
+            try:
+                await bot.pin_chat_message(channel_id, batch_message.id)
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+        try:
+            for i in range(arg-1, len(links)):
+                Vxy = links[i][1].replace("file/d/","uc?export=download&id=").replace("www.youtube-nocookie.com/embed", "youtu.be").replace("?modestbranding=1", "").replace("/view?usp=sharing","")
+                url = "https://" + Vxy
+                link0 = "https://" + Vxy
+
+                print(f"Processing Index {i}: Initial URL = {url}")
+
+                name1 = links[i][0].replace("(", "[").replace(")", "]").replace("_", "").replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
+                if "," in raw_text3:
+                     name = f'{PRENAME} {name1[:60]}'
+                else:
+                     name = f'{name1[:60]}'
+
+                user_id = m.from_user.id
+
+                if "visionias" in url:
                 async with ClientSession() as session:
                     async with session.get(url, headers={'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9', 'Accept-Language': 'en-US,en;q=0.9', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive', 'Pragma': 'no-cache', 'Referer': 'http://www.visionias.in/', 'Sec-Fetch-Dest': 'iframe', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Site': 'cross-site', 'Upgrade-Insecure-Requests': '1', 'User-Agent': 'Mozilla/5.0 (Linux; Android 12; RMX2121) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Mobile Safari/537.36', 'sec-ch-ua': '"Chromium";v="107", "Not=A?Brand";v="24"', 'sec-ch-ua-mobile': '?1', 'sec-ch-ua-platform': '"Android"',}) as resp:
                         text = await resp.text()
@@ -1140,39 +1174,32 @@ async def txt_handler(bot: Client, m: Message):
                 failed_count += 1
                 continue
 
-    except Exception as e:
-        await m.reply_text(e)
-        time.sleep(2)
+        except Exception as e:
+            await m.reply_text(str(e))
+            time.sleep(2)
 
-    success_count = len(links) - failed_count
-    video_count = v2_count + mpd_count + m3u8_count + yt_count + drm_count + zip_count + other_count
-    if raw_text7 == "/d":
-        await bot.send_message(
-    channel_id,
-    (
-        "<b>📬 ᴘʀᴏᴄᴇꜱꜱ ᴄᴏᴍᴘʟᴇᴛᴇᴅ</b>\n\n"
-        "<blockquote><b>📚 ʙᴀᴛᴄʜ ɴᴀᴍᴇ :</b> "
-        f"{b_name}</blockquote>\n"
+        # Batch Completion Stats
+        success_count = len(links) - failed_count - (arg-1) # Adjust for start index
+        video_count = v2_count + mpd_count + m3u8_count + yt_count + drm_count + zip_count + other_count
         
-        "╭────────────────\n"
-        f"├ 🖇️ ᴛᴏᴛᴀʟ ᴜʀʟꜱ : <code>{len(links)}</code>\n"
-        f"├ ✅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟ : <code>{success_count}</code>\n"
-        f"├ ❌ ꜰᴀɪʟᴇᴅ : <code>{failed_count}</code>\n"
-        "╰────────────────\n\n"
+        # Ensure counts are not negative (can happen if arg > len(links))
+        if success_count < 0: success_count = 0
 
-        "╭──────── 📦 ᴄᴀᴛᴇɢᴏʀʏ ────────\n"
-        f"├ 🎞️ ᴠɪᴅᴇᴏꜱ : <code>{video_count}</code>\n"
-        f"├ 📑 ᴘᴅꜰꜱ : <code>{pdf_count}</code>\n"
-        f"├ 🖼️ ɪᴍᴀɢᴇꜱ : <code>{img_count}</code>\n"
-        "╰────────────────────────────\n\n"
+        completion_text = (
+            f"<b>-┈━═.•°✅ Completed Batch {batch_idx+1}/{len(batches)} ✅°•.═━┈-</b>\n"
+            f"<blockquote><b>🎯Batch Name : {b_name}</b></blockquote>\n"
+            f"<blockquote>🔗 Total URLs: {len(links)} \n"
+            f"┃   ┠🔴 Total Failed URLs: {failed_count}\n"
+            f"┃   ┠🟢 Total Successful URLs: {success_count}\n"
+            f"┃   ┃   ┠🎥 Total Video URLs: {video_count}\n"
+            f"┃   ┃   ┠📄 Total PDF URLs: {pdf_count}\n"
+            f"┃   ┃   ┠📸 Total IMAGE URLs: {img_count}</blockquote>\n"
+        )
         
-        "<i>ᴇxᴛʀᴀᴄᴛᴇᴅ ʙʏ ᴡɪᴢᴀʀᴅ ʙᴏᴛꜱ 🤖</i>"
-    )
-)
+        await bot.send_message(channel_id, completion_text)
 
-    else:
-        await bot.send_message(channel_id, f"<b>-┈━═.•°✅ Completed ✅°•.═━┈-</b>\n<blockquote><b>🎯Batch Name : {b_name}</b></blockquote>\n<blockquote>🔗 Total URLs: {len(links)} \n┃   ┠🔴 Total Failed URLs: {failed_count}\n┃   ┠🟢 Total Successful URLs: {success_count}\n┃   ┃   ┠🎥 Total Video URLs: {video_count}\n┃   ┃   ┠📄 Total PDF URLs: {pdf_count}\n┃   ┃   ┠📸 Total IMAGE URLs: {img_count}</blockquote>\n")
-        await bot.send_message(m.chat.id, f"<blockquote><b>✅ Your Task is completed, please check your Set Channel📱</b></blockquote>")
+    # Final "All Batches Completed" message
+    await bot.send_message(m.chat.id, f"<blockquote><b>✅ All {len(batches)} batches completed, please check your Set Channel📱</b></blockquote>")
 
 
 
