@@ -913,33 +913,27 @@ async def txt_handler(bot: Client, m: Message):
             try:
                 cc = (
     f"<b>🎞️  Tɪᴛʟᴇ :</b> {name1} \n\n"
-    f"<blockquote>📚  𝗕ᴀᴛᴄʜ : {b_name}</blockquote>"
-    f"\n\n<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
+    f"<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
 )
                 cc1 = (
     f"<b>📑  Tɪᴛʟᴇ :</b> {name1} \n\n"
-    f"<blockquote>📚  𝗕ᴀᴛᴄʜ : {b_name}</blockquote>"
-    f"\n\n<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
+    f"<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
 )
                 cczip = (
     f"<b>📁  Tɪᴛʟᴇ :</b> {name1} .zip\n\n"
-    f"<blockquote>📚  𝗕ᴀᴛᴄʜ : {b_name}</blockquote>"
-    f"\n\n<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
+    f"<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
 )
                 ccimg = (
-    f"<b>🖼️  Tɪᴛʟᴇ</b> : {name1} \n\n"
-    f"<blockquote>📚  𝗕ᴀᴛᴄʜ : {b_name}</blockquote>"
-    f"\n\n<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
+    f"<b>🖼️  Tɪᴛʟᴇ :</b> {name1} \n\n"
+    f"<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
 )
                 ccm = (
     f"<b>🎵  Tɪᴛʟᴇ :</b> {name1} .mp3\n\n"
-    f"<blockquote>📚  𝗕ᴀᴛᴄʜ : {b_name}</blockquote>"
-    f"\n\n<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
+    f"<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
 )
                 cchtml = (
     f"<b>🌐  Tɪᴛʟᴇ :</b> {name1} .html\n\n"
-    f"<blockquote>📚  𝗕ᴀᴛᴄʜ : {b_name}</blockquote>"
-    f"\n\n<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
+    f"<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
 )
                   
                 if "drive.google.com" in url or "docs.google.com" in url:
