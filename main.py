@@ -496,39 +496,41 @@ async def txt_handler(bot: Client, m: Message):
         # Debug: Print number of lines
         print(f"Number of lines: {len(content)}")
         
-        links = []
+        items = []
         for i in content:
             if "://" in i:
                 parts = i.split("://", 1)
                 if len(parts) == 2:
                     name = parts[0]
                     url = parts[1]
-                    links.append([name, url])
+                    items.append({'type': 'file', 'name': name, 'url': url})
                     
-                if ".pdf" in url:
-                    pdf_count += 1
-                elif url.endswith((".png", ".jpeg", ".jpg")):
-                    img_count += 1
-                elif "v2" in url:
-                    v2_count += 1
-                elif "mpd" in url:
-                    mpd_count += 1
-                elif "m3u8" in url:
-                    m3u8_count += 1
-                elif "drm" in url:
-                    drm_count += 1
-                elif "youtu" in url:
-                    yt_count += 1
-                elif "zip" in url:
-                    zip_count += 1
-                else:
-                    other_count += 1
+                    if ".pdf" in url:
+                        pdf_count += 1
+                    elif url.endswith((".png", ".jpeg", ".jpg")):
+                        img_count += 1
+                    elif "v2" in url:
+                        v2_count += 1
+                    elif "mpd" in url:
+                        mpd_count += 1
+                    elif "m3u8" in url:
+                        m3u8_count += 1
+                    elif "drm" in url:
+                        drm_count += 1
+                    elif "youtu" in url:
+                        yt_count += 1
+                    elif "zip" in url:
+                        zip_count += 1
+                    else:
+                        other_count += 1
+            elif i.strip():
+                items.append({'type': 'text', 'content': i.strip()})
                         
-        # Debug: Print found links
-        print(f"Found links: {len(links)}")
-        for i, link_data in enumerate(links):
-             print(f"Link {i}: Name='{link_data[0]}', URL='{link_data[1]}'")
-        print("--- PARSED LINKS END ---")
+        # Debug: Print found items
+        print(f"Found items: {len(items)}")
+        for i, item_data in enumerate(items):
+             print(f"Item {i}: {item_data}")
+        print("--- PARSED ITEMS END ---")
 
         
     except UnicodeDecodeError:
@@ -541,12 +543,12 @@ async def txt_handler(bot: Client, m: Message):
         return
     
     await editable.edit(
-    f"**Total 🔗 links found are {len(links)}\n"
+    f"**Total 🔗 items found are {len(items)}\n"
     f"ᴘᴅғ : {pdf_count}   ɪᴍɢ : {img_count}   ᴠ𝟸 : {v2_count} \n"
     f"ᴢɪᴘ : {zip_count}   ᴅʀᴍ : {drm_count}   ᴍ𝟹ᴜ𝟾 : {m3u8_count}\n"
     f"ᴍᴘᴅ : {mpd_count}   ʏᴛ : {yt_count}\n"
     f"Oᴛʜᴇʀꜱ : {other_count}\n\n"
-    f"Send Your Index File ID Between 1-{len(links)} .**",
+    f"Send Your Index File ID Between 1-{len(items)} .**",
   
 )
     
@@ -559,8 +561,8 @@ async def txt_handler(bot: Client, m: Message):
     except asyncio.TimeoutError:
         raw_text = '1'
     
-    if int(raw_text) > len(links) :
-        await editable.edit(f"**🔹Enter number in range of Index (01-{len(links)})**")
+    if int(raw_text) > len(items) :
+        await editable.edit(f"**🔹Enter number in range of Index (01-{len(items)})**")
         processing_request = False  # Reset the processing flag
         await m.reply_text("**🔹Exiting Task......  **")
         return
@@ -726,14 +728,30 @@ async def txt_handler(bot: Client, m: Message):
     count =int(raw_text)    
     arg = int(raw_text)
     try:
-        for i in range(arg-1, len(links)):
-            Vxy = links[i][1].replace("file/d/","uc?export=download&id=").replace("www.youtube-nocookie.com/embed", "youtu.be").replace("?modestbranding=1", "").replace("/view?usp=sharing","")
+        for i in range(arg-1, len(items)):
+            if items[i]['type'] == 'text':
+                try:
+                    text_content = items[i]['content']
+                    # Send to Channel
+                    await bot.send_message(chat_id=channel_id, text=text_content)
+                    # Send to User (optional, but consistent with manual note logic)
+                    if channel_id != m.chat.id:
+                         await bot.send_message(chat_id=m.chat.id, text=text_content)
+                    count += 1
+                    continue
+                except Exception as e:
+                    print(f"Error sending text message: {e}")
+                    count += 1
+                    continue
+
+            # It's a file
+            Vxy = items[i]['url'].replace("file/d/","uc?export=download&id=").replace("www.youtube-nocookie.com/embed", "youtu.be").replace("?modestbranding=1", "").replace("/view?usp=sharing","")
             url = "https://" + Vxy
             link0 = "https://" + Vxy
 
             print(f"Processing Index {i}: Initial URL = {url}")
 
-            name1 = links[i][0].replace("(", "[").replace(")", "]").replace("_", "").replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
+            name1 = items[i]['name'].replace("(", "[").replace(")", "]").replace("_", "").replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
             if "," in raw_text3:
                  name = f'{PRENAME} {name1[:60]}'
             else:
@@ -911,30 +929,12 @@ async def txt_handler(bot: Client, m: Message):
                 cmd = f'yt-dlp -f "{ytf}" "{url}" -o "{name}.mp4"'
 
             try:
-                cc = (
-    f"<b>🎞️  Tɪᴛʟᴇ :</b> {name1} \n\n"
-    f"<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
-)
-                cc1 = (
-    f"<b>📑  Tɪᴛʟᴇ :</b> {name1} \n\n"
-    f"<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
-)
-                cczip = (
-    f"<b>📁  Tɪᴛʟᴇ :</b> {name1} .zip\n\n"
-    f"<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
-)
-                ccimg = (
-    f"<b>🖼️  Tɪᴛʟᴇ :</b> {name1} \n\n"
-    f"<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
-)
-                ccm = (
-    f"<b>🎵  Tɪᴛʟᴇ :</b> {name1} .mp3\n\n"
-    f"<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
-)
-                cchtml = (
-    f"<b>🌐  Tɪᴛʟᴇ :</b> {name1} .html\n\n"
-    f"<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
-)
+                cc = f"{name1}"
+                cc1 = f"{name1}"
+                cczip = f"{name1}.zip"
+                ccimg = f"{name1}"
+                ccm = f"{name1}.mp3"
+                cchtml = f"{name1}.html"
                   
                 if "drive.google.com" in url or "docs.google.com" in url:
                     try:
@@ -1129,7 +1129,7 @@ async def txt_handler(bot: Client, m: Message):
         await m.reply_text(e)
         time.sleep(2)
 
-    success_count = len(links) - failed_count
+    success_count = len(items) - failed_count
     video_count = v2_count + mpd_count + m3u8_count + yt_count + drm_count + zip_count + other_count
     if raw_text7 == "/d":
         await bot.send_message(
@@ -1140,7 +1140,7 @@ async def txt_handler(bot: Client, m: Message):
         f"{b_name}</blockquote>\n"
         
         "╭────────────────\n"
-        f"├ 🖇️ ᴛᴏᴛᴀʟ ᴜʀʟꜱ : <code>{len(links)}</code>\n"
+        f"├ 🖇️ ᴛᴏᴛᴀʟ ᴜʀʟꜱ : <code>{len(items)}</code>\n"
         f"├ ✅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟ : <code>{success_count}</code>\n"
         f"├ ❌ ꜰᴀɪʟᴇᴅ : <code>{failed_count}</code>\n"
         "╰────────────────\n\n"
@@ -1156,7 +1156,7 @@ async def txt_handler(bot: Client, m: Message):
 )
 
     else:
-        await bot.send_message(channel_id, f"<b>-┈━═.•°✅ Completed ✅°•.═━┈-</b>\n<blockquote><b>🎯Batch Name : {b_name}</b></blockquote>\n<blockquote>🔗 Total URLs: {len(links)} \n┃   ┠🔴 Total Failed URLs: {failed_count}\n┃   ┠🟢 Total Successful URLs: {success_count}\n┃   ┃   ┠🎥 Total Video URLs: {video_count}\n┃   ┃   ┠📄 Total PDF URLs: {pdf_count}\n┃   ┃   ┠📸 Total IMAGE URLs: {img_count}</blockquote>\n")
+        await bot.send_message(channel_id, f"<b>-┈━═.•°✅ Completed ✅°•.═━┈-</b>\n<blockquote><b>🎯Batch Name : {b_name}</b></blockquote>\n<blockquote>🔗 Total URLs: {len(items)} \n┃   ┠🔴 Total Failed URLs: {failed_count}\n┃   ┠🟢 Total Successful URLs: {success_count}\n┃   ┃   ┠🎥 Total Video URLs: {video_count}\n┃   ┃   ┠📄 Total PDF URLs: {pdf_count}\n┃   ┃   ┠📸 Total IMAGE URLs: {img_count}</blockquote>\n")
         await bot.send_message(m.chat.id, f"<blockquote><b>✅ Your Task is completed, please check your Set Channel📱</b></blockquote>")
 
 
