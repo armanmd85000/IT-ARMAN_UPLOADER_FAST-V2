@@ -749,6 +749,21 @@ async def txt_handler(bot: Client, m: Message):
             url = "https://" + Vxy
             link0 = "https://" + Vxy
 
+            if "assessments" in url and "kajabi" in url:
+                try:
+                    assessment_msg = f"Click on the link to give the Assessment : {url}"
+                    # Send to Channel
+                    await bot.send_message(chat_id=channel_id, text=assessment_msg)
+                    # Send to User
+                    if channel_id != m.chat.id:
+                         await bot.send_message(chat_id=m.chat.id, text=assessment_msg)
+                    count += 1
+                    continue
+                except Exception as e:
+                    print(f"Error sending assessment link: {e}")
+                    count += 1
+                    continue
+
             print(f"Processing Index {i}: Initial URL = {url}")
 
             name1 = items[i]['name'].replace("(", "[").replace(")", "]").replace("_", "").replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
