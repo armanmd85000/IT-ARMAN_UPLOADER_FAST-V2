@@ -1135,7 +1135,13 @@ async def txt_handler(bot: Client, m: Message):
                     time.sleep(1)
                 
             except Exception as e:
-                await bot.send_message(channel_id, f'⚠️**Downloading Failed**⚠️\n**Name** =>> `{str(count).zfill(3)} {name1}`\n**Url** =>> {link0}\n\n<blockquote><i><b>Failed Reason: {str(e)}</b></i></blockquote>', disable_web_page_preview=True)
+                fallback_msg = f"Click on the link to see the material : {link0}"
+                # Send to Channel
+                await bot.send_message(chat_id=channel_id, text=fallback_msg, disable_web_page_preview=True)
+                # Send to User
+                if channel_id != m.chat.id:
+                    await bot.send_message(chat_id=m.chat.id, text=fallback_msg, disable_web_page_preview=True)
+
                 count += 1
                 failed_count += 1
                 continue
