@@ -67,6 +67,8 @@ from logs import logging
 from utils import progress_bar
 from vars import *
 
+from modules.batch import batch_handler
+from modules.drm_handler import process_links
 # Pyromod fix
 import pyromod.listen
 pyromod.listen.Client.listen = pyromod.listen.listen
@@ -180,13 +182,6 @@ bot.add_handler(MessageHandler(auth.list_users_cmd, filters.command("users") & f
 bot.add_handler(MessageHandler(auth.my_plan_cmd, filters.command("plan") & filters.private))
 
 cookies_file_path = os.getenv("cookies_file_path", "youtube_cookies.txt")
-api_url = "http://master-api-v3.vercel.app/"
-api_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNzkxOTMzNDE5NSIsInRnX3VzZXJuYW1lIjoi4p61IFtvZmZsaW5lXSIsImlhdCI6MTczODY5MjA3N30.SXzZ1MZcvMp5sGESj0hBKSghhxJ3k1GTWoBUbivUe1I"
-cwtoken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE3NTExOTcwNjQsImNvbiI6eyJpc0FkbWluIjpmYWxzZSwiYXVzZXIiOiJVMFZ6TkdGU2NuQlZjR3h5TkZwV09FYzBURGxOZHowOSIsImlkIjoiVWtoeVRtWkhNbXRTV0RjeVJIcEJUVzExYUdkTlp6MDkiLCJmaXJzdF9uYW1lIjoiVWxadVFXaFBaMnAwSzJsclptVXpkbGxXT0djMlREWlRZVFZ5YzNwdldXNXhhVEpPWjFCWFYyd3pWVDA5IiwiZW1haWwiOiJWSGgyWjB0d2FUZFdUMVZYYmxoc2FsZFJSV2xrY0RWM2FGSkRSU3RzV0c5M1pDOW1hR0kxSzBOeVRUMDkiLCJwaG9uZSI6IldGcFZSSFZOVDJFeGNFdE9Oak4zUzJocmVrNHdRVDA5IiwiYXZhdGFyIjoiSzNWc2NTOHpTMHAwUW5sa2JrODNSRGx2ZWtOaVVUMDkiLCJyZWZlcnJhbF9jb2RlIjoiWkdzMlpUbFBORGw2Tm5OclMyVTRiRVIxTkVWb1FUMDkiLCJkZXZpY2VfdHlwZSI6ImFuZHJvaWQiLCJkZXZpY2VfdmVyc2lvbiI6IlEoQW5kcm9pZCAxMC4wKSIsImRldmljZV9tb2RlbCI6IlhpYW9taSBNMjAwN0oyMENJIiwicmVtb3RlX2FkZHIiOiI0NC4yMDIuMTkzLjIyMCJ9fQ.ONBsbnNwCQQtKMK2h18LCi73e90s2Cr63ZaIHtYueM-Gt5Z4sF6Ay-SEaKaIf1ir9ThflrtTdi5eFkUGIcI78R1stUUch_GfBXZsyg7aVyH2wxm9lKsFB2wK3qDgpd0NiBoT-ZsTrwzlbwvCFHhMp9rh83D4kZIPPdbp5yoA_06L0Zr4fNq3S328G8a8DtboJFkmxqG2T1yyVE2wLIoR3b8J3ckWTlT_VY2CCx8RjsstoTrkL8e9G5ZGa6sksMb93ugautin7GKz-nIz27pCr0h7g9BCoQWtL69mVC5xvVM3Z324vo5uVUPBi1bCG-ptpD9GWQ4exOBk9fJvGo-vRg"
-photologo = 'https://i.ibb.co/v6Vr7HCt/1000003297.png' #https://i.ibb.co/v6Vr7HCt/1000003297.png
-photoyt = 'https://i.ibb.co/v6Vr7HCt/1000003297.png' #https://i.ibb.co/v6Vr7HCt/1000003297.png
-photocp = 'https://i.ibb.co/v6Vr7HCt/1000003297.png'
-photozip = 'https://i.ibb.co/v6Vr7HCt/1000003297.png'
 
 
 # Inline keyboard for start command
@@ -710,359 +705,24 @@ async def txt_handler(bot: Client, m: Message):
     count =int(raw_text)    
     arg = int(raw_text)
     try:
-        for i in range(arg-1, len(links)):
-            Vxy = links[i][1].replace("file/d/","uc?export=download&id=").replace("www.youtube-nocookie.com/embed", "youtu.be").replace("?modestbranding=1", "").replace("/view?usp=sharing","")
-            url = "https://" + Vxy
-            link0 = "https://" + Vxy
-
-            name1 = links[i][0].replace("(", "[").replace(")", "]").replace("_", "").replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
-            if "," in raw_text3:
-                 name = f'{PRENAME} {name1[:60]}'
-            else:
-                 name = f'{name1[:60]}'
-                 
-            user_id = m.from_user.id
-            
-            if "visionias" in url:
-                async with ClientSession() as session:
-                    async with session.get(url, headers={'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9', 'Accept-Language': 'en-US,en;q=0.9', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive', 'Pragma': 'no-cache', 'Referer': 'http://www.visionias.in/', 'Sec-Fetch-Dest': 'iframe', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Site': 'cross-site', 'Upgrade-Insecure-Requests': '1', 'User-Agent': 'Mozilla/5.0 (Linux; Android 12; RMX2121) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Mobile Safari/537.36', 'sec-ch-ua': '"Chromium";v="107", "Not=A?Brand";v="24"', 'sec-ch-ua-mobile': '?1', 'sec-ch-ua-platform': '"Android"',}) as resp:
-                        text = await resp.text()
-                        url = re.search(r"(https://.*?playlist.m3u8.*?)\"", text).group(1)
-            
-            if "acecwply" in url:
-                cmd = f'yt-dlp -o "{name}.%(ext)s" -f "bestvideo[height<={raw_text2}]+bestaudio" --hls-prefer-ffmpeg --no-keep-video --remux-video mkv --no-warning "{url}"'
-
-            elif "https://static-trans-v1.classx.co.in" in url or "https://static-trans-v2.classx.co.in" in url:
-                base_with_params, signature = url.split("*")
-
-                base_clean = base_with_params.split(".mkv")[0] + ".mkv"
-
-                if "static-trans-v1.classx.co.in" in url:
-                    base_clean = base_clean.replace("https://static-trans-v1.classx.co.in", "https://appx-transcoded-videos-mcdn.akamai.net.in")
-                elif "static-trans-v2.classx.co.in" in url:
-                    base_clean = base_clean.replace("https://static-trans-v2.classx.co.in", "https://transcoded-videos-v2.classx.co.in")
-
-                url = f"{base_clean}*{signature}"
-            
-            elif "https://static-rec.classx.co.in/drm/" in url:
-                base_with_params, signature = url.split("*")
-
-                base_clean = base_with_params.split("?")[0]
-
-                base_clean = base_clean.replace("https://static-rec.classx.co.in", "https://appx-recordings-mcdn.akamai.net.in")
-
-                url = f"{base_clean}*{signature}"
-
-            elif "https://static-wsb.classx.co.in/" in url:
-                clean_url = url.split("?")[0]
-
-                clean_url = clean_url.replace("https://static-wsb.classx.co.in", "https://appx-wsb-gcp-mcdn.akamai.net.in")
-
-                url = clean_url
-
-            elif "https://static-db.classx.co.in/" in url:
-                if "*" in url:
-                    base_url, key = url.split("*", 1)
-                    base_url = base_url.split("?")[0]
-                    base_url = base_url.replace("https://static-db.classx.co.in", "https://appxcontent.kaxa.in")
-                    url = f"{base_url}*{key}"
-                else:
-                    base_url = url.split("?")[0]
-                    url = base_url.replace("https://static-db.classx.co.in", "https://appxcontent.kaxa.in")
-
-
-            elif "https://static-db-v2.classx.co.in/" in url:
-                if "*" in url:
-                    base_url, key = url.split("*", 1)
-                    base_url = base_url.split("?")[0]
-                    base_url = base_url.replace("https://static-db-v2.classx.co.in", "https://appx-content-v2.classx.co.in")
-                    url = f"{base_url}*{key}"
-                else:
-                    base_url = url.split("?")[0]
-                    url = base_url.replace("https://static-db-v2.classx.co.in", "https://appx-content-v2.classx.co.in")
-
-                user_id = m.from_user.id
-
-            elif any(x in url for x in ["https://cpvod.testbook.com/", "classplusapp.com/drm/", "media-cdn.classplusapp.com", "media-cdn-alisg.classplusapp.com", "media-cdn-a.classplusapp.com", "tencdn.classplusapp", "videos.classplusapp", "webvideos.classplusapp.com"]):
-                # normalize cpvod -> media-cdn path used by API
-                url_norm = url.replace("https://cpvod.testbook.com/", "https://media-cdn.classplusapp.com/drm/")
-                api_url_call = f"https://itsgolu-cp-api.vercel.app/itsgolu?url={url_norm}@ITSGOLU_OFFICIAL&user_id={user_id}"
-                keys_string = ""
-                mpd = None
-                try:
-                    resp = requests.get(api_url_call, timeout=30)
-                    # parse JSON safely
-                    try:
-                        data = resp.json()
-                    except Exception:
-                        data = None
-            
-                    # DRM response (MPD + KEYS)
-                    if isinstance(data, dict) and "KEYS" in data and "MPD" in data:
-                        mpd = data.get("MPD")
-                        keys = data.get("KEYS", [])
-                        url = mpd
-                        keys_string = " ".join([f"--key {k}" for k in keys])
-            
-                    # Non-DRM response (direct url)
-                    elif isinstance(data, dict) and "url" in data:
-                        url = data.get("url")
-                        keys_string = ""
-            
-                    else:
-                        # Unexpected response format — fallback to helper
-                        try:
-                            res = helper.get_mps_and_keys2(url_norm)
-                            if res:
-                                mpd, keys = res
-                                url = mpd
-                                keys_string = " ".join([f"--key {k}" for k in keys])
-                            else:
-                                keys_string = ""
-                        except Exception:
-                            keys_string = ""
-                except Exception:
-                    # API failed — attempt helper fallback
-                    try:
-                        res = helper.get_mps_and_keys2(url_norm)
-                        if res:
-                            mpd, keys = res
-                            url = mpd
-                            keys_string = " ".join([f"--key {k}" for k in keys])
-                        else:
-                            keys_string = ""
-                    except Exception:
-                        keys_string = ""
-            elif "tencdn.classplusapp" in url:
-                headers = {'host': 'api.classplusapp.com', 'x-access-token': f'{raw_text4}', 'accept-language': 'EN', 'api-version': '18', 'app-version': '1.4.73.2', 'build-number': '35', 'connection': 'Keep-Alive', 'content-type': 'application/json', 'device-details': 'Xiaomi_Redmi 7_SDK-32', 'device-id': 'c28d3cb16bbdac01', 'region': 'IN', 'user-agent': 'Mobile-Android', 'webengage-luid': '00000187-6fe4-5d41-a530-26186858be4c', 'accept-encoding': 'gzip'}
-                params = {"url": f"{url}"}
-                response = requests.get('https://api.classplusapp.com/cams/uploader/video/jw-signed-url', headers=headers, params=params)
-                url = response.json()['url']  
-           
-            elif 'videos.classplusapp' in url:
-                url = requests.get(f'https://api.classplusapp.com/cams/uploader/video/jw-signed-url?url={url}', headers={'x-access-token': f'{cptoken}'}).json()['url']
-            
-            elif 'media-cdn.classplusapp.com' in url or 'media-cdn-alisg.classplusapp.com' in url or 'media-cdn-a.classplusapp.com' in url: 
-                headers = {'host': 'api.classplusapp.com', 'x-access-token': f'{cptoken}', 'accept-language': 'EN', 'api-version': '18', 'app-version': '1.4.73.2', 'build-number': '35', 'connection': 'Keep-Alive', 'content-type': 'application/json', 'device-details': 'Xiaomi_Redmi 7_SDK-32', 'device-id': 'c28d3cb16bbdac01', 'region': 'IN', 'user-agent': 'Mobile-Android', 'webengage-luid': '00000187-6fe4-5d41-a530-26186858be4c', 'accept-encoding': 'gzip'}
-                params = {"url": f"{url}"}
-                response = requests.get('https://api.classplusapp.com/cams/uploader/video/jw-signed-url', headers=headers, params=params)
-                url   = response.json()['url']
-
-            elif "childId" in url and "parentId" in url:
-                url = f"https://anonymouspwplayer-0e5a3f512dec.herokuapp.com/pw?url={url}&token={raw_text4}"
-
-            if "edge.api.brightcove.com" in url:
-                bcov = f'bcov_auth={cwtoken}'
-                url = url.split("bcov_auth")[0]+bcov
-                           
-            elif "d1d34p8vz63oiq" in url or "sec1.pw.live" in url:
-                url = f"https://anonymouspwplayer-b99f57957198.herokuapp.com/pw?url={url}?token={raw_text4}"
-
-            if ".pdf*" in url:
-                url = f"https://dragoapi.vercel.app/pdf/{url}"
-            
-            elif 'encrypted.m' in url:
-                appxkey = url.split('*')[1]
-                url = url.split('*')[0]
-
-            if "youtu" in url:
-                ytf = f"bv*[height<={raw_text2}][ext=mp4]+ba[ext=m4a]/b[height<=?{raw_text2}]"
-            elif "embed" in url:
-                ytf = f"bestvideo[height<={raw_text2}]+bestaudio/best[height<={raw_text2}]"
-            else:
-                ytf = f"b[height<={raw_text2}]/bv[height<={raw_text2}]+ba/b/bv+ba"
-           
-            if "jw-prod" in url:
-                url = url.replace("https://apps-s3-jw-prod.utkarshapp.com/admin_v1/file_library/videos","https://d1q5ugnejk3zoi.cloudfront.net/ut-production-jw/admin_v1/file_library/videos")
-                cmd = f'yt-dlp -o "{name}.mp4" "{url}"'
-            elif "webvideos.classplusapp." in url:
-               cmd = f'yt-dlp --add-header "referer:https://web.classplusapp.com/" --add-header "x-cdn-tag:empty" -f "{ytf}" "{url}" -o "{name}.mp4"'
-            elif "youtube.com" in url or "youtu.be" in url:
-                cmd = f'yt-dlp --cookies youtube_cookies.txt -f "{ytf}" "{url}" -o "{name}".mp4'
-            else:
-                cmd = f'yt-dlp -f "{ytf}" "{url}" -o "{name}.mp4"'
-
-            try:
-                cc = (
-    f"<b>🏷️ Iɴᴅᴇx ID  :</b> {str(count).zfill(3)}\n\n"
-    f"<b>🎞️  Tɪᴛʟᴇ :</b> {name1} \n\n"
-    f"<blockquote>📚  𝗕ᴀᴛᴄʜ : {b_name}</blockquote>"
-    f"\n\n<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
-)
-                cc1 = (
-    f"<b>🏷️ Iɴᴅᴇx ID :</b> {str(count).zfill(3)}\n\n"
-    f"<b>📑  Tɪᴛʟᴇ :</b> {name1} \n\n"
-    f"<blockquote>📚  𝗕ᴀᴛᴄʜ : {b_name}</blockquote>"
-    f"\n\n<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
-)
-                cczip = f'[📁]Zip Id : {str(count).zfill(3)}\n**Zip Title :** `{name1} .zip`\n<blockquote><b>Batch Name :</b> {b_name}</blockquote>\n\n**Extracted by➤**{CR}\n' 
-                ccimg = (
-    f"<b>🏷️ Iɴᴅᴇx ID <b>: {str(count).zfill(3)} \n\n"
-    f"<b>🖼️  Tɪᴛʟᴇ</b> : {name1} \n\n"
-    f"<blockquote>📚  𝗕ᴀᴛᴄʜ : {b_name}</blockquote>"
-    f"\n\n<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
-)
-                ccm = f'[🎵]Audio Id : {str(count).zfill(3)}\n**Audio Title :** `{name1} .mp3`\n<blockquote><b>Batch Name :</b> {b_name}</blockquote>\n\n**Extracted by➤**{CR}\n'
-                cchtml = f'[🌐]Html Id : {str(count).zfill(3)}\n**Html Title :** `{name1} .html`\n<blockquote><b>Batch Name :</b> {b_name}</blockquote>\n\n**Extracted by➤**{CR}\n'
-                  
-                if "drive" in url:
-                    try:
-                        ka = await helper.download(url, name)
-                        copy = await bot.send_document(chat_id=channel_id,document=ka, caption=cc1)
-                        count+=1
-                        os.remove(ka)
-                    except FloodWait as e:
-                        await m.reply_text(str(e))
-                        time.sleep(e.x)
-                        continue    
-  
-                elif ".pdf" in url:
-                    if "cwmediabkt99" in url:
-                        max_retries = 3  # Define the maximum number of retries
-                        retry_delay = 4  # Delay between retries in seconds
-                        success = False  # To track whether the download was successful
-                        failure_msgs = []  # To keep track of failure messages
-                        
-                        for attempt in range(max_retries):
-                            try:
-                                await asyncio.sleep(retry_delay)
-                                url = url.replace(" ", "%20")
-                                scraper = cloudscraper.create_scraper()
-                                response = scraper.get(url)
-
-                                if response.status_code == 200:
-                                    with open(f'{name}.pdf', 'wb') as file:
-                                        file.write(response.content)
-                                    await asyncio.sleep(retry_delay)  # Optional, to prevent spamming
-                                    copy = await bot.send_document(chat_id=channel_id, document=f'{name}.pdf', caption=cc1)
-                                    count += 1
-                                    os.remove(f'{name}.pdf')
-                                    success = True
-                                    break  # Exit the retry loop if successful
-                                else:
-                                    failure_msg = await m.reply_text(f"Attempt {attempt + 1}/{max_retries} failed: {response.status_code} {response.reason}")
-                                    failure_msgs.append(failure_msg)
-                                    
-                            except Exception as e:
-                                failure_msg = await m.reply_text(f"Attempt {attempt + 1}/{max_retries} failed: {str(e)}")
-                                failure_msgs.append(failure_msg)
-                                await asyncio.sleep(retry_delay)
-                                continue 
-                        for msg in failure_msgs:
-                            await msg.delete()
-                            
-                    else:
-                        try:
-                            cmd = f'yt-dlp -o "{name}.pdf" "{url}"'
-                            download_cmd = f"{cmd} -R 25 --fragment-retries 25"
-                            os.system(download_cmd)
-                            copy = await bot.send_document(chat_id=channel_id, document=f'{name}.pdf', caption=cc1)
-                            count += 1
-                            os.remove(f'{name}.pdf')
-                        except FloodWait as e:
-                            await m.reply_text(str(e))
-                            time.sleep(e.x)
-                            continue    
-
-                elif ".ws" in url and  url.endswith(".ws"):
-                    try:
-                        await helper.pdf_download(f"{api_url}utkash-ws?url={url}&authorization={api_token}",f"{name}.html")
-                        time.sleep(1)
-                        await bot.send_document(chat_id=channel_id, document=f"{name}.html", caption=cchtml)
-                        os.remove(f'{name}.html')
-                        count += 1
-                    except FloodWait as e:
-                        await m.reply_text(str(e))
-                        time.sleep(e.x)
-                        continue    
-                            
-                elif any(ext in url for ext in [".jpg", ".jpeg", ".png"]):
-                    try:
-                        ext = url.split('.')[-1]
-                        cmd = f'yt-dlp -o "{name}.{ext}" "{url}"'
-                        download_cmd = f"{cmd} -R 25 --fragment-retries 25"
-                        os.system(download_cmd)
-                        copy = await bot.send_photo(chat_id=channel_id, photo=f'{name}.{ext}', caption=ccimg)
-                        count += 1
-                        os.remove(f'{name}.{ext}')
-                    except FloodWait as e:
-                        await m.reply_text(str(e))
-                        time.sleep(e.x)
-                        continue    
-
-                elif any(ext in url for ext in [".mp3", ".wav", ".m4a"]):
-                    try:
-                        ext = url.split('.')[-1]
-                        cmd = f'yt-dlp -x --audio-format {ext} -o "{name}.{ext}" "{url}"'
-                        download_cmd = f"{cmd} -R 25 --fragment-retries 25"
-                        os.system(download_cmd)
-                        await bot.send_document(chat_id=channel_id, document=f'{name}.{ext}', caption=cc1)
-                        os.remove(f'{name}.{ext}')
-                    except FloodWait as e:
-                        await m.reply_text(str(e))
-                        time.sleep(e.x)
-                        continue    
-                    
-                elif 'encrypted.m' in url:    
-                    Show = f"<i><b>Video APPX Encrypted Downloading</b></i>\n<blockquote><b>{str(count).zfill(3)}) {name1}</b></blockquote>"
-                    prog = await bot.send_message(channel_id, Show, disable_web_page_preview=True)
-                    try:
-
-                        res_file = await helper.download_and_decrypt_video(url, cmd, name, appxkey)  
-                        filename = res_file  
-                        await prog.delete(True) 
-                        if os.exists(filename):
-                            await helper.send_vid(bot, m, cc, filename, thumb, name, prog, channel_id, watermark=watermark)
-                            count += 1
-                        else:
-                            await bot.send_message(channel_id, f'⚠️**Downloading Failed**⚠️\n**Name** =>> `{str(count).zfill(3)} {name1}`\n**Url** =>> {link0}\n\n<blockquote><i><b>Failed Reason: {str(e)}</b></i></blockquote>', disable_web_page_preview=True)
-                            failed_count += 1
-                            count += 1
-                            continue
-                        
-                        
-                    except Exception as e:
-                        await bot.send_message(channel_id, f'⚠️**Downloading Failed**⚠️\n**Name** =>> `{str(count).zfill(3)} {name1}`\n**Url** =>> {link0}\n\n<blockquote><i><b>Failed Reason: {str(e)}</b></i></blockquote>', disable_web_page_preview=True)
-                        count += 1
-                        failed_count += 1
-                        continue
-                    
-
-                elif 'drmcdni' in url or 'drm/wv' in url or 'drm/common' in url:
-                    Show = f"<i><b>📥 Fast Video Downloading</b></i>\n<blockquote><b>{str(count).zfill(3)}) {name1}</b></blockquote>"
-                    prog = await bot.send_message(channel_id, Show, disable_web_page_preview=True)
-                    res_file = await helper.decrypt_and_merge_video(mpd, keys_string, path, name, raw_text2)
-                    filename = res_file
-                    await prog.delete(True)
-                    await helper.send_vid(bot, m, cc, filename, thumb, name, prog, channel_id, watermark=watermark)
-                    count += 1
-                    await asyncio.sleep(1)
-                    continue
-
-     
-
-            
-
-                else:
-                    Show = f"<i><b>📥 Fast Video Downloading</b></i>\n<blockquote><b>{str(count).zfill(3)}) {name1}</b></blockquote>"
-                    prog = await bot.send_message(channel_id, Show, disable_web_page_preview=True)
-                    res_file = await helper.download_video(url, cmd, name)
-                    filename = res_file
-                    await prog.delete(True)
-                    await helper.send_vid(bot, m, cc, filename, thumb, name, prog, channel_id, watermark=watermark)
-                    count += 1
-                    time.sleep(1)
-                
-            except Exception as e:
-                await bot.send_message(channel_id, f'⚠️**Downloading Failed**⚠️\n**Name** =>> `{str(count).zfill(3)} {name1}`\n**Url** =>> {link0}\n\n<blockquote><i><b>Failed Reason: {str(e)}</b></i></blockquote>', disable_web_page_preview=True)
-                count += 1
-                failed_count += 1
-                continue
-
+        results = await process_links(
+            client=bot,
+            message=m,
+            links=links,
+            start_index=int(raw_text),
+            batch_name=b_name,
+            resolution=raw_text2,
+            watermark=watermark,
+            credit=raw_text3,
+            token=raw_text4,
+            thumbnail=thumb,
+            channel_id=channel_id
+        )
+        failed_count = results["failed"]
     except Exception as e:
-        await m.reply_text(e)
+        await m.reply_text(str(e))
         time.sleep(2)
-
+        failed_count = len(links) - int(raw_text)
     success_count = len(links) - failed_count
     video_count = v2_count + mpd_count + m3u8_count + yt_count + drm_count + zip_count + other_count
     if raw_text7 == "/d":
@@ -1096,6 +756,10 @@ async def txt_handler(bot: Client, m: Message):
 
 
 
+
+@bot.on_message(filters.command(["batch"]) & auth_filter)
+async def batch_command(client: Client, message: Message):
+    await batch_handler(client, message)
 @bot.on_message(filters.text & filters.private)
 async def text_handler(bot: Client, m: Message):
     if m.from_user.is_bot:
@@ -1218,4 +882,15 @@ async def back_to_start_callback(client, callback_query: CallbackQuery):
     )
 
 print("Bot Started...")
-bot.run()
+try:
+    bot.run()
+except FloodWait as e:
+    print(f"❌ Telegram FloodWait Error: Must wait {e.value} seconds.")
+    logging.error(f"❌ Telegram FloodWait Error: Must wait {e.value} seconds.")
+    # Exit with 0 to prevent "Crashed" state, though app will still restart
+    sys.exit(0)
+except Exception as e:
+    print(f"❌ Critical Error: {e}")
+    import traceback
+    traceback.print_exc()
+    sys.exit(1)
