@@ -496,39 +496,41 @@ async def txt_handler(bot: Client, m: Message):
         # Debug: Print number of lines
         print(f"Number of lines: {len(content)}")
         
-        links = []
+        items = []
         for i in content:
             if "://" in i:
                 parts = i.split("://", 1)
                 if len(parts) == 2:
                     name = parts[0]
                     url = parts[1]
-                    links.append([name, url])
+                    items.append({'type': 'file', 'name': name, 'url': url})
                     
-                if ".pdf" in url:
-                    pdf_count += 1
-                elif url.endswith((".png", ".jpeg", ".jpg")):
-                    img_count += 1
-                elif "v2" in url:
-                    v2_count += 1
-                elif "mpd" in url:
-                    mpd_count += 1
-                elif "m3u8" in url:
-                    m3u8_count += 1
-                elif "drm" in url:
-                    drm_count += 1
-                elif "youtu" in url:
-                    yt_count += 1
-                elif "zip" in url:
-                    zip_count += 1
-                else:
-                    other_count += 1
+                    if ".pdf" in url:
+                        pdf_count += 1
+                    elif url.endswith((".png", ".jpeg", ".jpg")):
+                        img_count += 1
+                    elif "v2" in url:
+                        v2_count += 1
+                    elif "mpd" in url:
+                        mpd_count += 1
+                    elif "m3u8" in url:
+                        m3u8_count += 1
+                    elif "drm" in url:
+                        drm_count += 1
+                    elif "youtu" in url:
+                        yt_count += 1
+                    elif "zip" in url:
+                        zip_count += 1
+                    else:
+                        other_count += 1
+            elif i.strip():
+                items.append({'type': 'text', 'content': i.strip()})
                         
-        # Debug: Print found links
-        print(f"Found links: {len(links)}")
-        for i, link_data in enumerate(links):
-             print(f"Link {i}: Name='{link_data[0]}', URL='{link_data[1]}'")
-        print("--- PARSED LINKS END ---")
+        # Debug: Print found items
+        print(f"Found items: {len(items)}")
+        for i, item_data in enumerate(items):
+             print(f"Item {i}: {item_data}")
+        print("--- PARSED ITEMS END ---")
 
         
     except UnicodeDecodeError:
@@ -541,12 +543,12 @@ async def txt_handler(bot: Client, m: Message):
         return
     
     await editable.edit(
-    f"**Total 🔗 links found are {len(links)}\n"
+    f"**Total 🔗 items found are {len(items)}\n"
     f"ᴘᴅғ : {pdf_count}   ɪᴍɢ : {img_count}   ᴠ𝟸 : {v2_count} \n"
     f"ᴢɪᴘ : {zip_count}   ᴅʀᴍ : {drm_count}   ᴍ𝟹ᴜ𝟾 : {m3u8_count}\n"
     f"ᴍᴘᴅ : {mpd_count}   ʏᴛ : {yt_count}\n"
     f"Oᴛʜᴇʀꜱ : {other_count}\n\n"
-    f"Send Your Index File ID Between 1-{len(links)} .**",
+    f"Send Your Index File ID Between 1-{len(items)} .**",
   
 )
     
@@ -559,8 +561,8 @@ async def txt_handler(bot: Client, m: Message):
     except asyncio.TimeoutError:
         raw_text = '1'
     
-    if int(raw_text) > len(links) :
-        await editable.edit(f"**🔹Enter number in range of Index (01-{len(links)})**")
+    if int(raw_text) > len(items) :
+        await editable.edit(f"**🔹Enter number in range of Index (01-{len(items)})**")
         processing_request = False  # Reset the processing flag
         await m.reply_text("**🔹Exiting Task......  **")
         return
@@ -726,14 +728,45 @@ async def txt_handler(bot: Client, m: Message):
     count =int(raw_text)    
     arg = int(raw_text)
     try:
-        for i in range(arg-1, len(links)):
-            Vxy = links[i][1].replace("file/d/","uc?export=download&id=").replace("www.youtube-nocookie.com/embed", "youtu.be").replace("?modestbranding=1", "").replace("/view?usp=sharing","")
+        for i in range(arg-1, len(items)):
+            if items[i]['type'] == 'text':
+                try:
+                    text_content = items[i]['content']
+                    # Send to Channel
+                    await bot.send_message(chat_id=channel_id, text=text_content)
+                    # Send to User (optional, but consistent with manual note logic)
+                    if channel_id != m.chat.id:
+                         await bot.send_message(chat_id=m.chat.id, text=text_content)
+                    count += 1
+                    continue
+                except Exception as e:
+                    print(f"Error sending text message: {e}")
+                    count += 1
+                    continue
+
+            # It's a file
+            Vxy = items[i]['url'].replace("file/d/","uc?export=download&id=").replace("www.youtube-nocookie.com/embed", "youtu.be").replace("?modestbranding=1", "").replace("/view?usp=sharing","")
             url = "https://" + Vxy
             link0 = "https://" + Vxy
 
+            if "assessments" in url and "kajabi" in url:
+                try:
+                    assessment_msg = f"Click on the link to give the Assessment : {url}"
+                    # Send to Channel
+                    await bot.send_message(chat_id=channel_id, text=assessment_msg)
+                    # Send to User
+                    if channel_id != m.chat.id:
+                         await bot.send_message(chat_id=m.chat.id, text=assessment_msg)
+                    count += 1
+                    continue
+                except Exception as e:
+                    print(f"Error sending assessment link: {e}")
+                    count += 1
+                    continue
+
             print(f"Processing Index {i}: Initial URL = {url}")
 
-            name1 = links[i][0].replace("(", "[").replace(")", "]").replace("_", "").replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
+            name1 = items[i]['name'].replace("(", "[").replace(")", "]").replace("_", "").replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
             if "," in raw_text3:
                  name = f'{PRENAME} {name1[:60]}'
             else:
@@ -911,86 +944,96 @@ async def txt_handler(bot: Client, m: Message):
                 cmd = f'yt-dlp -f "{ytf}" "{url}" -o "{name}.mp4"'
 
             try:
-                cc = (
-    f"<b>🏷️ Iɴᴅᴇx ID  :</b> {str(count).zfill(3)}\n\n"
-    f"<b>🎞️  Tɪᴛʟᴇ :</b> {name1} \n\n"
-    f"<blockquote>📚  𝗕ᴀᴛᴄʜ : {b_name}</blockquote>"
-    f"\n\n<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
-)
-                cc1 = (
-    f"<b>🏷️ Iɴᴅᴇx ID :</b> {str(count).zfill(3)}\n\n"
-    f"<b>📑  Tɪᴛʟᴇ :</b> {name1} \n\n"
-    f"<blockquote>📚  𝗕ᴀᴛᴄʜ : {b_name}</blockquote>"
-    f"\n\n<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
-)
-                cczip = f'[📁]Zip Id : {str(count).zfill(3)}\n**Zip Title :** `{name1} .zip`\n<blockquote><b>Batch Name :</b> {b_name}</blockquote>\n\n**Extracted by➤**{CR}\n' 
-                ccimg = (
-    f"<b>🏷️ Iɴᴅᴇx ID <b>: {str(count).zfill(3)} \n\n"
-    f"<b>🖼️  Tɪᴛʟᴇ</b> : {name1} \n\n"
-    f"<blockquote>📚  𝗕ᴀᴛᴄʜ : {b_name}</blockquote>"
-    f"\n\n<b>🎓  Uᴘʟᴏᴀᴅ Bʏ : {CR}</b>"
-)
-                ccm = f'[🎵]Audio Id : {str(count).zfill(3)}\n**Audio Title :** `{name1} .mp3`\n<blockquote><b>Batch Name :</b> {b_name}</blockquote>\n\n**Extracted by➤**{CR}\n'
-                cchtml = f'[🌐]Html Id : {str(count).zfill(3)}\n**Html Title :** `{name1} .html`\n<blockquote><b>Batch Name :</b> {b_name}</blockquote>\n\n**Extracted by➤**{CR}\n'
+                cc = f"{name1}"
+                cc1 = f"{name1}"
+                cczip = f"{name1}.zip"
+                ccimg = f"{name1}"
+                ccm = f"{name1}.mp3"
+                cchtml = f"{name1}.html"
                   
-                if "drive" in url:
+                if "drive.google.com" in url or "docs.google.com" in url:
                     try:
-                        ka = await helper.download(url, name)
-                        copy = await bot.send_document(chat_id=channel_id,document=ka, caption=cc1)
-                        count+=1
-                        os.remove(ka)
+                        download_success = False
+                        # Attempt automatic download for Google Docs
+                        if "/document/d/" in url:
+                            try:
+                                doc_id_match = re.search(r'/document/d/([a-zA-Z0-9-_]+)', url)
+                                if doc_id_match:
+                                    doc_id = doc_id_match.group(1)
+                                    export_url = f"https://docs.google.com/document/d/{doc_id}/export?format=pdf"
+                                    ka = await helper.download(export_url, name)
+                                    if os.path.exists(ka):
+                                        await bot.send_document(chat_id=channel_id, document=ka, caption=cc1)
+                                        count += 1
+                                        os.remove(ka)
+                                        download_success = True
+                            except Exception as e:
+                                print(f"Failed to download Google Doc: {e}")
+
+                        if not download_success:
+                            # Fallback to Manual Note
+                            note_type = "PDF"
+                            if "assignment" in name1.lower():
+                                note_type = "Assignment"
+
+                            manual_msg = (
+                                f"Lesson name: {name1}\n"
+                                f"lesson link: {url}\n"
+                                f"Note: Click the link to download {note_type}"
+                            )
+
+                            # Send to Channel
+                            await bot.send_message(chat_id=channel_id, text=manual_msg)
+                            # Send to User
+                            if channel_id != m.chat.id:
+                                await bot.send_message(chat_id=m.chat.id, text=manual_msg)
+                            count += 1
+
                     except FloodWait as e:
                         await m.reply_text(str(e))
                         time.sleep(e.x)
-                        continue    
+                        continue
+                    except Exception as e:
+                        print(f"Error handling drive link: {e}")
+                        count += 1
+                        continue
   
                 elif ".pdf" in url:
-                    if "cwmediabkt99" in url:
-                        max_retries = 3  # Define the maximum number of retries
-                        retry_delay = 4  # Delay between retries in seconds
-                        success = False  # To track whether the download was successful
-                        failure_msgs = []  # To keep track of failure messages
-                        
-                        for attempt in range(max_retries):
-                            try:
-                                await asyncio.sleep(retry_delay)
-                                url = url.replace(" ", "%20")
-                                scraper = cloudscraper.create_scraper()
-                                response = scraper.get(url)
+                    max_retries = 3
+                    retry_delay = 3
+                    success = False
 
-                                if response.status_code == 200:
-                                    with open(f'{name}.pdf', 'wb') as file:
-                                        file.write(response.content)
-                                    await asyncio.sleep(retry_delay)  # Optional, to prevent spamming
-                                    copy = await bot.send_document(chat_id=channel_id, document=f'{name}.pdf', caption=cc1)
-                                    count += 1
-                                    os.remove(f'{name}.pdf')
-                                    success = True
-                                    break  # Exit the retry loop if successful
-                                else:
-                                    failure_msg = await m.reply_text(f"Attempt {attempt + 1}/{max_retries} failed: {response.status_code} {response.reason}")
-                                    failure_msgs.append(failure_msg)
-                                    
-                            except Exception as e:
-                                failure_msg = await m.reply_text(f"Attempt {attempt + 1}/{max_retries} failed: {str(e)}")
-                                failure_msgs.append(failure_msg)
-                                await asyncio.sleep(retry_delay)
-                                continue 
-                        for msg in failure_msgs:
-                            await msg.delete()
-                            
-                    else:
+                    for attempt in range(max_retries):
                         try:
-                            cmd = f'yt-dlp -o "{name}.pdf" "{url}"'
-                            download_cmd = f"{cmd} -R 25 --fragment-retries 25"
-                            os.system(download_cmd)
-                            copy = await bot.send_document(chat_id=channel_id, document=f'{name}.pdf', caption=cc1)
-                            count += 1
-                            os.remove(f'{name}.pdf')
-                        except FloodWait as e:
-                            await m.reply_text(str(e))
-                            time.sleep(e.x)
-                            continue    
+                            await asyncio.sleep(retry_delay)
+                            # Basic URL encoding for spaces
+                            clean_url = url.replace(" ", "%20")
+
+                            # Use cloudscraper for better compatibility
+                            scraper = cloudscraper.create_scraper()
+                            response = scraper.get(clean_url, stream=True)
+
+                            if response.status_code == 200:
+                                with open(f'{name}.pdf', 'wb') as file:
+                                    file.write(response.content)
+
+                                await bot.send_document(chat_id=channel_id, document=f'{name}.pdf', caption=cc1)
+                                count += 1
+                                if os.path.exists(f'{name}.pdf'):
+                                    os.remove(f'{name}.pdf')
+                                success = True
+                                break
+                            else:
+                                print(f"Attempt {attempt + 1} failed: {response.status_code}")
+                                continue
+
+                        except Exception as e:
+                            print(f"Attempt {attempt + 1} failed: {str(e)}")
+                            continue
+
+                    if not success:
+                        # Raise exception to trigger the global fallback (Manual Note)
+                        raise Exception("Failed to download PDF after retries")
 
                 elif ".ws" in url and  url.endswith(".ws"):
                     try:
@@ -1082,7 +1125,13 @@ async def txt_handler(bot: Client, m: Message):
                     time.sleep(1)
                 
             except Exception as e:
-                await bot.send_message(channel_id, f'⚠️**Downloading Failed**⚠️\n**Name** =>> `{str(count).zfill(3)} {name1}`\n**Url** =>> {link0}\n\n<blockquote><i><b>Failed Reason: {str(e)}</b></i></blockquote>', disable_web_page_preview=True)
+                fallback_msg = f"Click on the link to see the material : {link0}"
+                # Send to Channel
+                await bot.send_message(chat_id=channel_id, text=fallback_msg, disable_web_page_preview=True)
+                # Send to User
+                if channel_id != m.chat.id:
+                    await bot.send_message(chat_id=m.chat.id, text=fallback_msg, disable_web_page_preview=True)
+
                 count += 1
                 failed_count += 1
                 continue
@@ -1091,7 +1140,7 @@ async def txt_handler(bot: Client, m: Message):
         await m.reply_text(e)
         time.sleep(2)
 
-    success_count = len(links) - failed_count
+    success_count = len(items) - failed_count
     video_count = v2_count + mpd_count + m3u8_count + yt_count + drm_count + zip_count + other_count
     if raw_text7 == "/d":
         await bot.send_message(
@@ -1102,7 +1151,7 @@ async def txt_handler(bot: Client, m: Message):
         f"{b_name}</blockquote>\n"
         
         "╭────────────────\n"
-        f"├ 🖇️ ᴛᴏᴛᴀʟ ᴜʀʟꜱ : <code>{len(links)}</code>\n"
+        f"├ 🖇️ ᴛᴏᴛᴀʟ ᴜʀʟꜱ : <code>{len(items)}</code>\n"
         f"├ ✅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟ : <code>{success_count}</code>\n"
         f"├ ❌ ꜰᴀɪʟᴇᴅ : <code>{failed_count}</code>\n"
         "╰────────────────\n\n"
@@ -1118,7 +1167,7 @@ async def txt_handler(bot: Client, m: Message):
 )
 
     else:
-        await bot.send_message(channel_id, f"<b>-┈━═.•°✅ Completed ✅°•.═━┈-</b>\n<blockquote><b>🎯Batch Name : {b_name}</b></blockquote>\n<blockquote>🔗 Total URLs: {len(links)} \n┃   ┠🔴 Total Failed URLs: {failed_count}\n┃   ┠🟢 Total Successful URLs: {success_count}\n┃   ┃   ┠🎥 Total Video URLs: {video_count}\n┃   ┃   ┠📄 Total PDF URLs: {pdf_count}\n┃   ┃   ┠📸 Total IMAGE URLs: {img_count}</blockquote>\n")
+        await bot.send_message(channel_id, f"<b>-┈━═.•°✅ Completed ✅°•.═━┈-</b>\n<blockquote><b>🎯Batch Name : {b_name}</b></blockquote>\n<blockquote>🔗 Total URLs: {len(items)} \n┃   ┠🔴 Total Failed URLs: {failed_count}\n┃   ┠🟢 Total Successful URLs: {success_count}\n┃   ┃   ┠🎥 Total Video URLs: {video_count}\n┃   ┃   ┠📄 Total PDF URLs: {pdf_count}\n┃   ┃   ┠📸 Total IMAGE URLs: {img_count}</blockquote>\n")
         await bot.send_message(m.chat.id, f"<blockquote><b>✅ Your Task is completed, please check your Set Channel📱</b></blockquote>")
 
 
