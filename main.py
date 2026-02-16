@@ -836,9 +836,8 @@ async def txt_handler(bot: Client, m: Message):
 
             elif any(x in url for x in ["https://cpvod.testbook.com/", "classplusapp.com/drm/", "media-cdn.classplusapp.com", "media-cdn-alisg.classplusapp.com", "media-cdn-a.classplusapp.com", "tencdn.classplusapp", "videos.classplusapp", "webvideos.classplusapp.com"]):
                 print(f"Matched Classplus domain in URL: {url}")
-                # normalize cpvod -> media-cdn path used by API
-                url_norm = url.replace("https://cpvod.testbook.com/", "https://media-cdn.classplusapp.com/drm/")
-                api_url_call = f"https://cptest-ecru.vercel.app/ITsGOLU_OFFICIAL?url={url_norm}"
+                token_val = raw_text4 if raw_text4 != '/d' else ''
+                api_url_call = f"https://head-micheline-botupdatevip-f1804c58.koyeb.app/get_keys?url={url}@botupdatevip4u&user_id={user_id}&token={token_val}"
 
                 print(f"API Call: {api_url_call}")
 
@@ -846,7 +845,6 @@ async def txt_handler(bot: Client, m: Message):
                 mpd = None
                 try:
                     resp = requests.get(api_url_call, timeout=30)
-                    # parse JSON safely
                     try:
                         data = resp.json()
                         print(f"API Response: {data}")
@@ -854,46 +852,25 @@ async def txt_handler(bot: Client, m: Message):
                         print(f"JSON Parse Error: {e}")
                         data = None
             
-                    # DRM response (MPD + KEYS)
-                    if isinstance(data, dict) and "KEYS" in data and "MPD" in data:
-                        mpd = data.get("MPD")
-                        keys = data.get("KEYS") or []
-                        url = mpd
-                        keys_string = " ".join([f"--key {k}" for k in keys])
-            
-                    # Non-DRM response (direct url)
-                    elif isinstance(data, dict) and "url" in data:
-                        url = data.get("url")
-                        keys_string = ""
-                        print(f"Updated URL from API: {url}")
-            
-                    else:
-                        print("Unexpected response format, trying helper fallback...")
-                        # Unexpected response format — fallback to helper
-                        try:
-                            res = helper.get_mps_and_keys2(url_norm)
-                            if res:
-                                mpd, keys = res
-                                url = mpd
-                                keys_string = " ".join([f"--key {k}" for k in keys])
-                            else:
-                                keys_string = ""
-                        except Exception as e:
-                            print(f"Helper fallback failed: {e}")
-                            keys_string = ""
-                except Exception as e:
-                    print(f"API request failed: {e}")
-                    # API failed — attempt helper fallback
-                    try:
-                        res = helper.get_mps_and_keys2(url_norm)
-                        if res:
-                            mpd, keys = res
+                    if isinstance(data, dict):
+                        # Check for DRM response
+                        if "mpd_url" in data and "keys" in data:
+                            mpd = data.get("mpd_url")
+                            keys = data.get("keys") or []
                             url = mpd
                             keys_string = " ".join([f"--key {k}" for k in keys])
-                        else:
+                        # Check for Non-DRM response
+                        elif "url" in data:
+                            url = data.get("url")
                             keys_string = ""
-                    except Exception:
-                        keys_string = ""
+                            print(f"Updated URL from API: {url}")
+                        else:
+                            print("Unknown response format.")
+                    else:
+                        print("API did not return a dictionary.")
+
+                except Exception as e:
+                    print(f"API request failed: {e}")
             elif "tencdn.classplusapp" in url:
                 headers = {'host': 'api.classplusapp.com', 'x-access-token': f'{raw_text4}', 'accept-language': 'EN', 'api-version': '18', 'app-version': '1.4.73.2', 'build-number': '35', 'connection': 'Keep-Alive', 'content-type': 'application/json', 'device-details': 'Xiaomi_Redmi 7_SDK-32', 'device-id': 'c28d3cb16bbdac01', 'region': 'IN', 'user-agent': 'Mobile-Android', 'webengage-luid': '00000187-6fe4-5d41-a530-26186858be4c', 'accept-encoding': 'gzip'}
                 params = {"url": f"{url}"}
