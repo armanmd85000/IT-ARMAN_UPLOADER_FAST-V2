@@ -387,15 +387,25 @@ async def download_video(url, cmd, name):
     try:
         if os.path.isfile(name):
             return name
-        elif os.path.isfile(f"{name}.webm"):
-            return f"{name}.webm"
-        name = name.split(".")[0]
-        if os.path.isfile(f"{name}.mkv"):
-            return f"{name}.mkv"
         elif os.path.isfile(f"{name}.mp4"):
             return f"{name}.mp4"
-        elif os.path.isfile(f"{name}.mp4.webm"):
-            return f"{name}.mp4.webm"
+        elif os.path.isfile(f"{name}.mkv"):
+            return f"{name}.mkv"
+        elif os.path.isfile(f"{name}.webm"):
+            return f"{name}.webm"
+
+        name_no_ext = name.split(".")[0]
+        if os.path.isfile(f"{name_no_ext}.mp4"):
+            return f"{name_no_ext}.mp4"
+        elif os.path.isfile(f"{name_no_ext}.mkv"):
+            return f"{name_no_ext}.mkv"
+        elif os.path.isfile(f"{name_no_ext}.webm"):
+            return f"{name_no_ext}.webm"
+
+        # Fallback: check for any file starting with name
+        for file in os.listdir('.'):
+            if file.startswith(name_no_ext) and file.endswith(('.mp4', '.mkv', '.webm')):
+                return file
 
         return name + ".mp4"
     except Exception as exc:
