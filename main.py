@@ -187,8 +187,6 @@ bot.add_handler(MessageHandler(auth.list_users_cmd, filters.command("users") & f
 bot.add_handler(MessageHandler(auth.my_plan_cmd, filters.command("plan") & filters.private))
 
 cookies_file_path = os.getenv("cookies_file_path", "youtube_cookies.txt")
-api_url = "http://master-api-v3.vercel.app/"
-api_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNzkxOTMzNDE5NSIsInRnX3VzZXJuYW1lIjoi4p61IFtvZmZsaW5lXSIsImlhdCI6MTczODY5MjA3N30.SXzZ1MZcvMp5sGESj0hBKSghhxJ3k1GTWoBUbivUe1I"
 cwtoken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE3NTExOTcwNjQsImNvbiI6eyJpc0FkbWluIjpmYWxzZSwiYXVzZXIiOiJVMFZ6TkdGU2NuQlZjR3h5TkZwV09FYzBURGxOZHowOSIsImlkIjoiVWtoeVRtWkhNbXRTV0RjeVJIcEJUVzExYUdkTlp6MDkiLCJmaXJzdF9uYW1lIjoiVWxadVFXaFBaMnAwSzJsclptVXpkbGxXT0djMlREWlRZVFZ5YzNwdldXNXhhVEpPWjFCWFYyd3pWVDA5IiwiZW1haWwiOiJWSGgyWjB0d2FUZFdUMVZYYmxoc2FsZFJSV2xrY0RWM2FGSkRSU3RzV0c5M1pDOW1hR0kxSzBOeVRUMDkiLCJwaG9uZSI6IldGcFZSSFZOVDJFeGNFdE9Oak4zUzJocmVrNHdRVDA5IiwiYXZhdGFyIjoiSzNWc2NTOHpTMHAwUW5sa2JrODNSRGx2ZWtOaVVUMDkiLCJyZWZlcnJhbF9jb2RlIjoiWkdzMlpUbFBORGw2Tm5OclMyVTRiRVIxTkVWb1FUMDkiLCJkZXZpY2VfdHlwZSI6ImFuZHJvaWQiLCJkZXZpY2VfdmVyc2lvbiI6IlEoQW5kcm9pZCAxMC4wKSIsImRldmljZV9tb2RlbCI6IlhpYW9taSBNMjAwN0oyMENJIiwicmVtb3RlX2FkZHIiOiI0NC4yMDIuMTkzLjIyMCJ9fQ.ONBsbnNwCQQtKMK2h18LCi73e90s2Cr63ZaIHtYueM-Gt5Z4sF6Ay-SEaKaIf1ir9ThflrtTdi5eFkUGIcI78R1stUUch_GfBXZsyg7aVyH2wxm9lKsFB2wK3qDgpd0NiBoT-ZsTrwzlbwvCFHhMp9rh83D4kZIPPdbp5yoA_06L0Zr4fNq3S328G8a8DtboJFkmxqG2T1yyVE2wLIoR3b8J3ckWTlT_VY2CCx8RjsstoTrkL8e9G5ZGa6sksMb93ugautin7GKz-nIz27pCr0h7g9BCoQWtL69mVC5xvVM3Z324vo5uVUPBi1bCG-ptpD9GWQ4exOBk9fJvGo-vRg"
 photologo = 'https://i.ibb.co/v6Vr7HCt/1000003297.png' #https://i.ibb.co/v6Vr7HCt/1000003297.png
 photoyt = 'https://i.ibb.co/v6Vr7HCt/1000003297.png' #https://i.ibb.co/v6Vr7HCt/1000003297.png
@@ -802,65 +800,34 @@ async def txt_handler(bot: Client, m: Message):
                 user_id = m.from_user.id
 
             elif any(x in url for x in ["https://cpvod.testbook.com/", "classplusapp.com/drm/", "media-cdn.classplusapp.com", "media-cdn-alisg.classplusapp.com", "media-cdn-a.classplusapp.com", "tencdn.classplusapp", "videos.classplusapp", "webvideos.classplusapp.com"]):
-                print(f"Matched Classplus domain in URL: {url}")
-                # normalize cpvod -> media-cdn path used by API
-                url_norm = url.replace("https://cpvod.testbook.com/", "https://media-cdn.classplusapp.com/drm/")
-                api_url_call = f"https://cptest-ecru.vercel.app/ITsGOLU_OFFICIAL?url={url_norm}"
-
-                print(f"API Call: {api_url_call}")
+                # 1. Construct the API URL with the correct suffix (@botupdatevip4u) and credentials
+                api_req_url = f"{api_url}/get_keys?url={url}@botupdatevip4u&user_id={API_USER_ID}&token={api_token}"
+                print(f"API Call: {api_req_url}")
 
                 keys_string = ""
                 mpd = None
+
                 try:
-                    resp = requests.get(api_url_call, timeout=30)
-                    # parse JSON safely
-                    try:
-                        data = resp.json()
-                        print(f"API Response: {data}")
-                    except Exception as e:
-                        print(f"JSON Parse Error: {e}")
-                        data = None
-            
-                    # DRM response (MPD + KEYS)
-                    if isinstance(data, dict) and "KEYS" in data and "MPD" in data:
-                        mpd = data.get("MPD")
-                        keys = data.get("KEYS") or []
+                    if "drm/" in url or "cpvod" in url:
+                        # --- DRM Logic ---
+                        mpd, keys = helper.get_mps_and_keys2(api_req_url)
                         url = mpd
-                        keys_string = " ".join([f"--key {k}" for k in keys])
-            
-                    # Non-DRM response (direct url)
-                    elif isinstance(data, dict) and "url" in data:
-                        url = data.get("url")
-                        keys_string = ""
-                        print(f"Updated URL from API: {url}")
-            
-                    else:
-                        print("Unexpected response format, trying helper fallback...")
-                        # Unexpected response format — fallback to helper
-                        try:
-                            res = helper.get_mps_and_keys2(url_norm)
-                            if res:
-                                mpd, keys = res
-                                url = mpd
-                                keys_string = " ".join([f"--key {k}" for k in keys])
-                            else:
-                                keys_string = ""
-                        except Exception as e:
-                            print(f"Helper fallback failed: {e}")
-                            keys_string = ""
-                except Exception as e:
-                    print(f"API request failed: {e}")
-                    # API failed — attempt helper fallback
-                    try:
-                        res = helper.get_mps_and_keys2(url_norm)
-                        if res:
-                            mpd, keys = res
-                            url = mpd
+                        if keys:
                             keys_string = " ".join([f"--key {k}" for k in keys])
                         else:
                             keys_string = ""
-                    except Exception:
+                    else:
+                        # --- Non-DRM Logic (media-cdn, etc.) ---
+                        mpd = helper.get_mps_and_keys3(api_req_url)
+                        url = mpd
                         keys_string = ""
+
+                    print(f"Resolved URL: {url}")
+
+                except Exception as e:
+                    print(f"API request failed: {e}")
+                    # Optional: Add fallback logic or pass
+                    pass
             elif "tencdn.classplusapp" in url:
                 headers = {'host': 'api.classplusapp.com', 'x-access-token': f'{raw_text4}', 'accept-language': 'EN', 'api-version': '18', 'app-version': '1.4.73.2', 'build-number': '35', 'connection': 'Keep-Alive', 'content-type': 'application/json', 'device-details': 'Xiaomi_Redmi 7_SDK-32', 'device-id': 'c28d3cb16bbdac01', 'region': 'IN', 'user-agent': 'Mobile-Android', 'webengage-luid': '00000187-6fe4-5d41-a530-26186858be4c', 'accept-encoding': 'gzip'}
                 params = {"url": f"{url}"}
