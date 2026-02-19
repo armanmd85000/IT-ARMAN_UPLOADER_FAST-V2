@@ -837,64 +837,39 @@ async def txt_handler(bot: Client, m: Message):
 
             elif any(x in url for x in ["https://cpvod.testbook.com/", "classplusapp.com/drm/", "media-cdn.classplusapp.com", "media-cdn-alisg.classplusapp.com", "media-cdn-a.classplusapp.com", "tencdn.classplusapp", "videos.classplusapp", "webvideos.classplusapp.com"]):
                 print(f"Matched Classplus domain in URL: {url}")
-                # normalize cpvod -> media-cdn path used by API
-                url_norm = url.replace("https://cpvod.testbook.com/", "https://media-cdn.classplusapp.com/drm/")
-                api_url_call = f"https://cptest-ecru.vercel.app/ITsGOLU_OFFICIAL?url={url_norm}"
 
-                print(f"API Call: {api_url_call}")
+                # Construct the API URL with the specific token and user_id from vars.py
+                api_req_url = f"{api_url}/get_keys?url={url}@botupdatevip4u&user_id={API_USER_ID}&token={api_token}"
+                print(f"API Call: {api_req_url}")
 
                 keys_string = ""
                 mpd = None
+
                 try:
-                    resp = requests.get(api_url_call, timeout=30)
-                    # parse JSON safely
-                    try:
-                        data = resp.json()
-                        print(f"API Response: {data}")
-                    except Exception as e:
-                        print(f"JSON Parse Error: {e}")
-                        data = None
-            
-                    # DRM response (MPD + KEYS)
-                    if isinstance(data, dict) and "KEYS" in data and "MPD" in data:
-                        mpd = data.get("MPD")
-                        keys = data.get("KEYS") or []
+                    if "drm/" in url or "cpvod" in url:
+                        # DRM Logic
+                        mpd, keys = helper.get_mps_and_keys2(api_req_url)
                         url = mpd
-                        keys_string = " ".join([f"--key {k}" for k in keys])
-            
-                    # Non-DRM response (direct url)
-                    elif isinstance(data, dict) and "url" in data:
-                        url = data.get("url")
-                        keys_string = ""
-                        print(f"Updated URL from API: {url}")
-            
-                    else:
-                        print("Unexpected response format, trying helper fallback...")
-                        # Unexpected response format — fallback to helper
-                        try:
-                            res = helper.get_mps_and_keys2(url_norm)
-                            if res:
-                                mpd, keys = res
-                                url = mpd
-                                keys_string = " ".join([f"--key {k}" for k in keys])
-                            else:
-                                keys_string = ""
-                        except Exception as e:
-                            print(f"Helper fallback failed: {e}")
-                            keys_string = ""
-                except Exception as e:
-                    print(f"API request failed: {e}")
-                    # API failed — attempt helper fallback
-                    try:
-                        res = helper.get_mps_and_keys2(url_norm)
-                        if res:
-                            mpd, keys = res
-                            url = mpd
+                        if keys:
                             keys_string = " ".join([f"--key {k}" for k in keys])
                         else:
                             keys_string = ""
-                    except Exception:
+                    else:
+                        # Non-DRM Logic
+                        mpd = helper.get_mps_and_keys3(api_req_url)
+                        url = mpd
                         keys_string = ""
+
+                    print(f"Resolved URL: {url}")
+
+                except Exception as e:
+                    print(f"API request failed: {e}")
+                    # Fallback to old helper logic if new API fails?
+                    # Instructions imply replacing the logic entirely, but error handling is wise.
+                    # Given instructions: "Remove try/except blocks if present to fail fast on errors" in helper,
+                    # but here in main loop we might want to catch to proceed to next link or retry?
+                    # I will keep a basic try-except to log, but proceed.
+                    pass
             elif "tencdn.classplusapp" in url:
                 headers = {'host': 'api.classplusapp.com', 'x-access-token': f'{raw_text4}', 'accept-language': 'EN', 'api-version': '18', 'app-version': '1.4.73.2', 'build-number': '35', 'connection': 'Keep-Alive', 'content-type': 'application/json', 'device-details': 'Xiaomi_Redmi 7_SDK-32', 'device-id': 'c28d3cb16bbdac01', 'region': 'IN', 'user-agent': 'Mobile-Android', 'webengage-luid': '00000187-6fe4-5d41-a530-26186858be4c', 'accept-encoding': 'gzip'}
                 params = {"url": f"{url}"}

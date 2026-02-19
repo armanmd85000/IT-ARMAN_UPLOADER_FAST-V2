@@ -6,6 +6,11 @@ API_ID = int(os.environ.get("API_ID", ""))
 API_HASH = os.environ.get("API_HASH", "")
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 
+# Koyeb API Configuration
+api_url = "https://head-micheline-botupdatevip-f1804c58.koyeb.app"
+api_token = "162zCU8mXkpXQX6G4ky"
+API_USER_ID = "1621539522"
+
 CREDIT = os.environ.get("CREDIT", "𝐈𝐓'𝐬𝐆𝐎𝐋𝐔")
 # MongoDB Configuration
 DATABASE_NAME = os.environ.get("DATABASE_NAME", "CpprivateApi")
@@ -62,21 +67,8 @@ Please contact the admin to renew your subscription.</blockquote>""",
 Please contact the admin to get access.</blockquote>""",
 
     "not_admin": "⚠️ You are not authorized to use this command!",
-    
+
     "invalid_format": """❌ <b>Invalid Format!</b>
 
 <blockquote>Use format: {format}</blockquote>"""
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
