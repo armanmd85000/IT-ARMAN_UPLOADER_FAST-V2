@@ -74,10 +74,6 @@ from logs import logging
 from utils import progress_bar
 from vars import *
 
-# Pyromod fix
-import pyromod.listen
-pyromod.listen.Client.listen = pyromod.listen.listen
-
 from db import db
 
 auto_flags = {}
@@ -586,6 +582,9 @@ async def txt_handler(bot: Client, m: Message):
         raw_text2 = input2.text
         await input2.delete(True)
     except asyncio.TimeoutError:
+        raw_text2 = '480'
+
+    if raw_text2 == '/d':
         raw_text2 = '480'
     quality = f"{raw_text2}p"
     try:
@@ -1110,6 +1109,8 @@ async def text_handler(bot: Client, m: Message):
     await editable.edit(f"╭━━━━❰ᴇɴᴛᴇʀ ʀᴇꜱᴏʟᴜᴛɪᴏɴ❱━━➣ \n┣━━⪼ send `144`\n┣━━⪼ send `240`\n┣━━⪼ send `360`\n┣━━⪼ send `480`\n┣━━⪼ send `720`\n┣━━⪼ send `1080`\n╰━━⌈⚡[`{CREDIT}`]⚡⌋━━➣ ")
     input2: Message = await bot.listen(editable.chat.id, filters=filters.text & filters.user(m.from_user.id))
     raw_text2 = input2.text
+    if raw_text2 == '/d':
+        raw_text2 = '480'
     quality = f"{raw_text2}p"
     await input2.delete(True)
     try:
