@@ -86,6 +86,31 @@ userbot = None
 timeout_duration = 300  # 5 minutes
 
 
+# Custom Listener Logic to replace Pyromod
+listening_futures = {}
+
+async def listen(self, chat_id, filters=None, timeout=None):
+    if timeout is None:
+        timeout = 300
+
+    loop = asyncio.get_running_loop()
+    future = loop.create_future()
+
+    if chat_id not in listening_futures:
+        listening_futures[chat_id] = []
+    listening_futures[chat_id].append((future, filters))
+
+    try:
+        return await asyncio.wait_for(future, timeout)
+    except asyncio.TimeoutError:
+        # Cleanup
+        if chat_id in listening_futures:
+            # We need to find and remove this specific tuple
+            listening_futures[chat_id] = [x for x in listening_futures[chat_id] if x[0] != future]
+        raise
+
+Client.listen = listen
+
 # Initialize bot with random session
 bot = Client(
     "ugx",
@@ -96,6 +121,37 @@ bot = Client(
     sleep_threshold=60,
     in_memory=True
 )
+
+async def listener_handler(client, message):
+    chat_id = message.chat.id
+    if chat_id in listening_futures:
+        # Iterate to find a matching listener
+        # We process a copy to allow modification
+        listeners = listening_futures[chat_id]
+        matched_idx = -1
+
+        for i, (future, flt) in enumerate(listeners):
+            if future.done():
+                continue
+
+            # Check filter if exists
+            if flt is not None:
+                if not await flt(client, message):
+                    continue
+
+            # Match found
+            matched_idx = i
+            future.set_result(message)
+            message.stop_propagation()
+            break
+
+        if matched_idx != -1:
+            listeners.pop(matched_idx)
+            if not listeners:
+                del listening_futures[chat_id]
+
+# Register the listener handler with low group priority to catch messages early
+bot.add_handler(MessageHandler(listener_handler), group=-1)
 
 # Register command handlers
 register_clean_handler(bot)
