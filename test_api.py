@@ -2,9 +2,9 @@ import requests
 
 # Configuration
 base_api_url = "https://covercel.vercel.app/extract_keys"
-user_id = "1621539522"  # From vars.py
+user_id = "8457494001"  # New user_id provided by user
 
-# Test URLs provided by the user
+# Test URLs (from previous message)
 test_urls = [
     "https://media-cdn.classplusapp.com/436362/cc/52207a2ffeee4b2f86ff156a8e88593f-sg/master.m3u8",
     "https://media-cdn.classplusapp.com/436362/cc/3f8a8929ca184aa6bac5ca2db66cf9ad-do/master.m3u8"
