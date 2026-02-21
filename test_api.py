@@ -1,38 +1,34 @@
 import requests
+import urllib.parse
 
 # Configuration
 base_api_url = "https://covercel.vercel.app/extract_keys"
-user_id = "8457494001"  # New user_id provided by user
+video_url = "https://media-cdn.classplusapp.com/436362/cc/3519c432b8d84ca8ad6245e73ccad67e-ws/master.m3u8"
+user_id_val = "8457494001"
 
-# Test URLs (from previous message)
-test_urls = [
-    "https://media-cdn.classplusapp.com/436362/cc/52207a2ffeee4b2f86ff156a8e88593f-sg/master.m3u8",
-    "https://media-cdn.classplusapp.com/436362/cc/3f8a8929ca184aa6bac5ca2db66cf9ad-do/master.m3u8"
-]
-
-def test_single_url(url):
-    # Construct the API request URL as per instructions:
-    # https://covercel.vercel.app/extract_keys?url={url}@bots_updatee&user_id={user_id}
-    api_req_url = f"{base_api_url}?url={url}@bots_updatee&user_id={user_id}"
-
-    print(f"\n--- Testing URL: {url} ---")
-    print(f"API Request: {api_req_url}")
-
+def test_request(description, constructed_url):
+    print(f"\n--- Test: {description} ---")
+    print(f"Request URL: {constructed_url}")
     try:
-        response = requests.get(api_req_url, timeout=30)
+        response = requests.get(constructed_url, timeout=30)
         print(f"Status Code: {response.status_code}")
-
         try:
-            data = response.json()
-            print("Response JSON:")
-            print(data)
+            print("Response JSON:", response.json())
         except ValueError:
-            print("Response Text (Not JSON):")
-            print(response.text)
-
+            print("Response Text:", response.text)
     except Exception as e:
         print(f"Error: {e}")
 
 if __name__ == "__main__":
-    for url in test_urls:
-        test_single_url(url)
+    # Test 1: Literal braces as requested by the user
+    # Format: url={https://...}@bots_updatee&user_id={8457494001}
+    url_1 = f"{base_api_url}?url={{{video_url}}}@bots_updatee&user_id={{{user_id_val}}}"
+    test_request("Literal Braces (User Request)", url_1)
+
+    # Test 2: Braces only on URL (common confusion point)
+    url_2 = f"{base_api_url}?url={{{video_url}}}@bots_updatee&user_id={user_id_val}"
+    test_request("Braces on URL only", url_2)
+
+    # Test 3: Standard clean format (No braces, just values - effectively what we tried before but re-verifying)
+    url_3 = f"{base_api_url}?url={video_url}@bots_updatee&user_id={user_id_val}"
+    test_request("Clean Values (No Braces)", url_3)
