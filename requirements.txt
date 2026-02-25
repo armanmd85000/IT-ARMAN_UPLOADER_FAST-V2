@@ -19,7 +19,9 @@ cryptography==42.0.5
 pyopenssl==24.1.0
 PyJWT==2.8.0
 
-yt-dlp==2025.06.30
+# Install yt-dlp directly from GitHub to get the latest fixes for YouTube nsig/player issues
+yt-dlp @ https://github.com/yt-dlp/yt-dlp/archive/master.zip
+
 mutagen==1.46.0
 ffmpeg-python==0.2.0
 pillow==11.1.0
@@ -40,5 +42,3 @@ itsdangerous
 pytz
 colorama
 reportlab
-
-# Force Heroku Rebuild
