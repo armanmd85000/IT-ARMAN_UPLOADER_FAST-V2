@@ -40,3 +40,5 @@ itsdangerous
 pytz
 colorama
 reportlab
+
+# Force Heroku Rebuild
