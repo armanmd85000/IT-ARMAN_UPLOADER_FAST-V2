@@ -74,7 +74,8 @@ class DriveAPI:
                     fields='nextPageToken, files(id, name, mimeType, size)',
                     pageToken=page_token,
                     includeItemsFromAllDrives=True,
-                    supportsAllDrives=True
+                    supportsAllDrives=True,
+                    orderBy='name'
                 ).execute()
                 for file in response.get('files', []):
                     results.append(file)
@@ -156,7 +157,42 @@ class DriveAPI:
             await asyncio.to_thread(_download_sync)
             return file_path
         except Exception as e:
-            logging.error(f"Error downloading file {file_name}: {e}")
+            logging.error(f"Error downloading file {file_name} via API: {e}")
             if os.path.exists(file_path):
                 os.remove(file_path)
+
+            # Fallback to yt-dlp if it's a restricted file and cookies are provided
+            if 'cannotDownloadFile' in str(e) or '403' in str(e):
+                cookies_file = "downloads/drive_cookies.txt"
+                if not os.path.exists(cookies_file):
+                     # Check if it was saved directly in the root directory by the /cookies handler
+                     if os.path.exists("drive_cookies.txt"):
+                         cookies_file = "drive_cookies.txt"
+                     else:
+                         logging.error("drive_cookies.txt not found. Cannot fallback to yt-dlp.")
+                         return None
+
+                logging.info(f"Attempting fallback download for {file_name} using yt-dlp...")
+                # The view URL can usually be ripped by yt-dlp using cookies
+                drive_url = f"https://drive.google.com/file/d/{file_id}/view"
+
+                # Execute yt-dlp synchronously in a thread
+                def _yt_dlp_sync():
+                    import subprocess
+                    cmd = [
+                        "yt-dlp",
+                        "--cookies", cookies_file,
+                        "-o", file_path,
+                        drive_url
+                    ]
+                    result = subprocess.run(cmd, capture_output=True, text=True)
+                    if result.returncode != 0:
+                        logging.error(f"yt-dlp failed: {result.stderr}")
+                        return False
+                    return True
+
+                success = await asyncio.to_thread(_yt_dlp_sync)
+                if success and os.path.exists(file_path):
+                     return file_path
+
             return None

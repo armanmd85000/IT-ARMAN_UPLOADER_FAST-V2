@@ -104,8 +104,26 @@ async def unauthorized_handler(client, message: Message):
 async def start(client: Client, message: Message):
     await message.reply(
         "**Hello! I am Google Drive Telegram Uploader Bot.**\n\n"
-        "Send /drive `<google_drive_folder_url>` to start downloading and uploading files."
+        "Send /drive `<google_drive_folder_url>` to start downloading and uploading files.\n"
+        "Send /cookies with a `cookies.txt` file attached to authenticate restricted downloads."
     )
+
+@bot.on_message(filters.command("cookies") & filters.private & auth_filter)
+async def save_cookies(client: Client, message: Message):
+    target_message = message
+    if not message.document:
+        if message.reply_to_message and message.reply_to_message.document:
+            target_message = message.reply_to_message
+        else:
+            await message.reply("Please send a `cookies.txt` file and put `/cookies` in the caption, or reply to a file with `/cookies`.")
+            return
+
+    if not target_message.document.file_name.endswith('.txt'):
+        await message.reply("The file must be a `.txt` file containing your exported cookies.")
+        return
+
+    await target_message.download(file_name="drive_cookies.txt")
+    await message.reply("✅ `drive_cookies.txt` has been saved successfully! You can now download restricted files.")
 
 @bot.on_message(filters.command(["drive"]) & auth_filter)
 async def drive_handler(client: Client, m: Message):
@@ -192,11 +210,28 @@ async def drive_handler(client: Client, m: Message):
 
     os.makedirs("downloads", exist_ok=True)
 
+    last_folder_path = None
+
     for index, file in enumerate(files, 1):
         file_name = file['name']
         file_id = file['id']
         mime_type = file.get('mimeType', '')
         folder_path = file.get('path', 'Unknown_Folder')
+
+        # Send folder text to channel if entering a new folder
+        if folder_path != last_folder_path:
+            last_folder_path = folder_path
+
+            # Extract main folder and subfolder logic
+            parts = folder_path.split("/")
+            main_folder = parts[0]
+            sub_folder = " -> ".join(parts[1:]) if len(parts) > 1 else "None"
+
+            await client.send_message(
+                chat_id=channel_id,
+                text=f"📂 **Main Folder:** `{main_folder}`\n"
+                     f"📁 **Subfolder:** `{sub_folder}`"
+            )
 
         status_msg = await client.send_message(m.chat.id, f"📥 Downloading `{file_name}`\n📂 Folder: `{folder_path}`")
         
