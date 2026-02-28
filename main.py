@@ -18,6 +18,7 @@ from pyrogram.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton,
 )
+from pyrogram.errors.exceptions.bad_request_400 import MessageNotModified
 
 # 🧠 Bot Modules
 import itsgolu as helper
@@ -171,8 +172,17 @@ async def drive_handler(client: Client, m: Message):
             await editable.edit("❌ Invalid Channel ID format. Please use a number. Exiting.")
             return
 
+    # Helper to avoid MessageNotModified crashes
+    async def safe_edit(msg_obj: Message, text: str):
+        try:
+            await msg_obj.edit(text)
+        except MessageNotModified:
+            pass
+        except Exception as e:
+            logging.error(f"Failed to edit message: {e}")
+
     # Ask for custom thumbnail
-    await editable.edit("**1. Send an Image for Thumbnail\n2. Send `/d` for default Thumbnail\n3. Send `/skip` to skip Thumbnail**")
+    await safe_edit(editable, "**1. Send an Image for Thumbnail\n2. Send `/d` for default Thumbnail\n3. Send `/skip` to skip Thumbnail**")
     thumb = "/d"
     try:
         input_thumb: Message = await client.listen(m.chat.id, timeout=30)
@@ -181,22 +191,22 @@ async def drive_handler(client: Client, m: Message):
             temp_file = f"downloads/thumb_{m.from_user.id}.jpg"
             await input_thumb.download(file_name=temp_file)
             thumb = temp_file
-            await editable.edit("✅ Custom thumbnail saved!")
+            await safe_edit(editable, "✅ Custom thumbnail saved!")
         elif input_thumb.text:
             if input_thumb.text == "/d":
                 thumb = "/d"
-                await editable.edit("📰 Using default thumbnail.")
+                await safe_edit(editable, "📰 Using default thumbnail.")
             elif input_thumb.text == "/skip":
                 thumb = "no"
-                await editable.edit("♻️ Skipping thumbnail.")
+                await safe_edit(editable, "♻️ Skipping thumbnail.")
         await input_thumb.delete(True)
         await asyncio.sleep(1)
     except asyncio.TimeoutError:
-        await editable.edit("⚠️ Timeout! Using default thumbnail.")
+        await safe_edit(editable, "⚠️ Timeout! Using default thumbnail.")
         await asyncio.sleep(1)
 
     # Ask for watermark
-    await editable.edit("**1. Send a Text for Watermark\n2. Send `/d` for no watermark**")
+    await safe_edit(editable, "**1. Send a Text for Watermark\n2. Send `/d` for no watermark**")
     try:
         input_wm: Message = await client.listen(m.chat.id, timeout=30)
         watermark = input_wm.text.strip()
@@ -204,15 +214,15 @@ async def drive_handler(client: Client, m: Message):
     except asyncio.TimeoutError:
         watermark = '/d'
 
-    await editable.edit(f"⏳ **Fetching folder contents...**")
+    await safe_edit(editable, f"⏳ **Fetching folder contents...**")
 
     # Traverse folder
     files = await drive_api.traverse_folder_recursive(folder_id)
     if not files:
-        await editable.edit("❌ No files found in the folder or failed to access the folder.")
+        await safe_edit(editable, "❌ No files found in the folder or failed to access the folder.")
         return
 
-    await editable.edit(f"✅ Found **{len(files)}** files. Starting download...")
+    await safe_edit(editable, f"✅ Found **{len(files)}** files. Starting download...")
 
     success_count = 0
     failed_count = 0
