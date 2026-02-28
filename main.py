@@ -96,7 +96,7 @@ def auth_check_filter(_, client, message):
 
 auth_filter = filters.create(auth_check_filter)
 
-@bot.on_message(~auth_filter & filters.private & filters.command)
+@bot.on_message(~auth_filter & filters.private & filters.command(["start", "drive"]))
 async def unauthorized_handler(client, message: Message):
     await message.reply("You are not authorized to use this bot. Contact owner.")
 
