@@ -4,6 +4,7 @@ import logging
 import io
 import asyncio
 from google.oauth2.service_account import Credentials
+from google.oauth2.credentials import Credentials as UserCredentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 
@@ -14,6 +15,20 @@ class DriveAPI:
         self.service = self._authenticate()
 
     def _authenticate(self):
+        # 1. Try to use a User Token (OAuth2) first. This allows access to restricted folders
+        # shared ONLY with the user's actual email address.
+        user_token_json = os.environ.get('GDRIVE_USER_TOKEN')
+        if user_token_json:
+            try:
+                creds_dict = json.loads(user_token_json)
+                creds = UserCredentials.from_authorized_user_info(creds_dict, SCOPES)
+                service = build('drive', 'v3', credentials=creds)
+                logging.info("Authenticated using GDRIVE_USER_TOKEN (User OAuth2).")
+                return service
+            except Exception as e:
+                logging.error(f"Failed to authenticate with User Token: {e}")
+
+        # 2. Fallback to Service Account credentials (good for public/shared drives, but not restricted private folders)
         creds_json = os.environ.get('GDRIVE_CREDENTIALS')
         if not creds_json:
             logging.warning("GDRIVE_CREDENTIALS environment variable not found. Will try to use credentials.json file.")
@@ -21,16 +36,17 @@ class DriveAPI:
                 with open('credentials.json', 'r') as f:
                     creds_json = f.read()
             else:
-                logging.error("No Google Drive credentials found. Please set GDRIVE_CREDENTIALS env var or provide credentials.json")
+                logging.error("No Google Drive credentials found. Please set GDRIVE_USER_TOKEN or GDRIVE_CREDENTIALS env var.")
                 return None
 
         try:
             creds_dict = json.loads(creds_json)
             creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
             service = build('drive', 'v3', credentials=creds)
+            logging.info("Authenticated using GDRIVE_CREDENTIALS (Service Account).")
             return service
         except Exception as e:
-            logging.error(f"Failed to authenticate with Google Drive: {e}")
+            logging.error(f"Failed to authenticate with Service Account: {e}")
             return None
 
     def extract_folder_id(self, url):
@@ -56,7 +72,9 @@ class DriveAPI:
                     q=f"'{folder_id}' in parents and trashed=false",
                     spaces='drive',
                     fields='nextPageToken, files(id, name, mimeType, size)',
-                    pageToken=page_token
+                    pageToken=page_token,
+                    includeItemsFromAllDrives=True,
+                    supportsAllDrives=True
                 ).execute()
                 for file in response.get('files', []):
                     results.append(file)
@@ -72,7 +90,11 @@ class DriveAPI:
         if not self.service:
             return "Unknown_Folder"
         try:
-            folder = self.service.files().get(fileId=folder_id, fields="name").execute()
+            folder = self.service.files().get(
+                fileId=folder_id,
+                fields="name",
+                supportsAllDrives=True
+            ).execute()
             return folder.get('name', 'Unknown_Folder')
         except Exception as e:
             logging.error(f"An error occurred getting folder name: {e}")
@@ -112,7 +134,10 @@ class DriveAPI:
         file_path = os.path.join(destination_folder, file_name)
 
         try:
-            request = self.service.files().get_media(fileId=file_id)
+            request = self.service.files().get_media(
+                fileId=file_id,
+                supportsAllDrives=True
+            )
             loop = asyncio.get_running_loop()
 
             def _download_sync():
