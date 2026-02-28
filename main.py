@@ -26,6 +26,7 @@ from vars import *
 from gdrive import DriveAPI
 
 auto_flags = {}
+stop_flag = False
 
 # Custom Listener Logic
 listening_futures = {}
@@ -108,6 +109,12 @@ async def start(client: Client, message: Message):
         "Send /cookies with a `cookies.txt` file attached to authenticate restricted downloads."
     )
 
+@bot.on_message(filters.command("stop") & filters.private & auth_filter)
+async def stop_command(client: Client, message: Message):
+    global stop_flag
+    stop_flag = True
+    await message.reply("🛑 Stop command received! The bot will halt after finishing the current task.")
+
 @bot.on_message(filters.command("cookies") & filters.private & auth_filter)
 async def save_cookies(client: Client, message: Message):
     target_message = message
@@ -127,6 +134,8 @@ async def save_cookies(client: Client, message: Message):
 
 @bot.on_message(filters.command(["drive"]) & auth_filter)
 async def drive_handler(client: Client, m: Message):
+    global stop_flag
+    stop_flag = False
     args = m.text.split(maxsplit=1)
     if len(args) < 2:
         await m.reply_text("Please provide a Google Drive folder link. Example: `/drive https://drive.google.com/drive/folders/...`")
@@ -213,6 +222,10 @@ async def drive_handler(client: Client, m: Message):
     last_folder_path = None
 
     for index, file in enumerate(files, 1):
+        if stop_flag:
+            await client.send_message(m.chat.id, "🛑 **Process stopped by user.**")
+            break
+
         file_name = file['name']
         file_id = file['id']
         mime_type = file.get('mimeType', '')
