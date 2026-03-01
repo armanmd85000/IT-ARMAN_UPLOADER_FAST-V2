@@ -1,58 +1,47 @@
 {
-  "name": "ugxdev",
-  "description": "𝑻𝒆𝒙𝒕 𝑳𝒆𝒆𝒄𝒉 𝑽𝒊𝒅𝒆𝒐 𝑬𝒙𝒕𝒓𝒂𝒄𝒕𝒐𝒓 𝑭𝒐𝒓 𝑻𝒆𝒍𝒆𝒈𝒓𝒂𝒎",
-  "logo": "https://files.catbox.moe/8e2qqw.jpg",
-  "keywords": [
-    "text-video",
-    "video-extract",
-    "pyrogram"
-  ],
-  "repository": "https://github.com/Dev-Thanos/TXT-LEECH-BOT",
-  "success_url": "https://t.me/CoderThanos",
-  "stack": "heroku-24",
-  "env": {
-    "API_ID": {
-      "description": "𝑬𝒏𝒕𝒆𝒓 𝒀𝒐𝒖𝒓 𝑨𝒑𝒊 𝑰𝑫",
-      "value": "22746239",
-      "required": true
+    "name": "DriveTelegramUploader",
+    "description": "Telegram bot to upload Google Drive videos.",
+    "keywords": [
+      "telegram",
+      "bot",
+      "gdrive",
+      "python"
+    ],
+    "repository": "https://github.com/ITsGOLU-OFFICIAL/ITsGOLU_UPLOADER_FAST-V2",
+    "stack": "container",
+    "env": {
+      "API_ID": {
+        "description": "Get this value from my.telegram.org",
+        "required": true
+      },
+      "API_HASH": {
+        "description": "Get this value from my.telegram.org",
+        "required": true
+      },
+      "BOT_TOKEN": {
+        "description": "The bot token from BotFather",
+        "required": true
+      },
+      "OWNER_ID": {
+        "description": "Your Telegram User ID",
+        "required": true
+      },
+      "GDRIVE_CREDENTIALS": {
+        "description": "JSON string for Google Service Account credentials",
+        "required": true
+      },
+      "CREDIT": {
+        "description": "Caption credit for your uploads",
+        "required": false,
+        "value": "𝐈𝐓'𝐬𝐆𝐎𝐋𝐔"
+      }
     },
-    "API_HASH": {
-      "description": "𝑬𝒏𝒕𝒆𝒓 𝒀𝒐𝒖𝒓 𝑨𝒑𝒊 𝑯𝒂𝒔𝒉",
-      "value": "a98ec8cfd8572a3a7c936cf828fe6215",
-      "required": true
-    },
-    "BOT_TOKEN": {
-      "description": "𝑬𝒏𝒕𝒆𝒓 𝒀𝒐𝒖𝒓 𝑩𝒐𝒕 𝑻𝒐𝒌𝒆𝒏",
-      "value": "",
-      "required": true
-    },
-    "OWNER": {
-      "description": "𝙀𝙣𝙩𝙚𝙧 𝙔𝙤𝙪𝙧 𝙏𝙚𝙡𝙚𝙜𝙧𝙖𝙢 𝙄𝘿",
-      "value": "7743201204",
-      "required": true
-    },
-    "CREDIT": {
-      "description": "𝙀𝙣𝙩𝙚𝙧 𝘾𝙧𝙚𝙙𝙞𝙩 𝙉𝙖𝙢𝙚 𝙞𝙣 𝙖𝙡𝙢𝙤𝙨𝙩 6-8 𝙡𝙚𝙩𝙩𝙚𝙧𝙨",
-      "value": "ITsGOLU",
-      "required": true
-    }
-  },
-  "addons": [],
-  "buildpacks": [
-    {
-      "url": "heroku/python"
-    },
-    {
-      "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest.git"
-    },
-    {
-        "url": "https://github.com/heroku/heroku-buildpack-activestorage-preview"
-    }
-  ],
-  "formation": {
-    "worker": {
-      "quantity": 1,
-      "size": "eco"
-    }
+    "buildpacks": [
+      {
+        "url": "heroku/python"
+      },
+      {
+        "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest.git"
+      }
+    ]
   }
-}

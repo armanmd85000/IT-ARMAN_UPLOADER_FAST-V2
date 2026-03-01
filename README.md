@@ -5,6 +5,33 @@
   <a href="https://github.com/ITsGOLU-OFFICIAL/ITsGOLU_UPLOADER_FAST-V2">
 </h1>
 <br>
+
+<details><summary><b>How to Download Restricted Folders (Windows Only)</b></summary>
+<br>
+<b>If a Google Drive folder has "Disable options to download" checked by the owner, Telegram bots on cloud servers cannot download it. You must run the local Windows Automation Script on your PC.</b>
+<br>
+<br>
+<b>1. Install the required libraries on your PC:</b>
+<br>
+<code>pip install playwright requests</code>
+<br>
+<code>playwright install chromium</code>
+<br>
+<br>
+<b>2. Close ALL completely open Google Chrome windows!</b>
+<br>
+<br>
+<b>3. Open `windows_downloader.py` in a text editor and change `CHROME_PROFILE_DIR` to point to your actual Chrome profile (e.g., `C:\Users\YourName\AppData\Local\Google\Chrome\User Data`).</b>
+<br>
+<br>
+<b>4. Run the script:</b>
+<br>
+<code>python windows_downloader.py</code>
+<br>
+<br>
+<b>The script will launch your personal Chrome browser, log into Google Drive automatically, play the videos, intercept the secure video stream URL natively, and download them to a `drive_downloads` folder!</b>
+</details>
+
 <details>
   <summary><b>Deploy on Heroku</b></summary>
 
