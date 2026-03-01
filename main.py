@@ -41,7 +41,7 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 
 # ⚙️ Pyrogram
-from pyrogram import Client, filters, idle
+from pyrogram import Client, filters, idle, StopPropagation
 from pyrogram.handlers import MessageHandler
 from pyrogram.types import (
     Message,
@@ -142,13 +142,13 @@ async def listener_handler(client, message):
             # Match found
             matched_idx = i
             future.set_result(message)
-            message.stop_propagation()
             break
 
         if matched_idx != -1:
             listeners.pop(matched_idx)
             if not listeners:
                 del listening_futures[chat_id]
+            raise StopPropagation
 
 # Register the listener handler with low group priority to catch messages early
 bot.add_handler(MessageHandler(listener_handler), group=-1)
@@ -286,6 +286,11 @@ async def cookies_handler(client: Client, m: Message):
         # Read the content of the uploaded file
         with open(downloaded_path, "r") as uploaded_file:
             cookies_content = uploaded_file.read()
+
+        # Clean up the downloaded file
+        import os
+        if os.path.exists(downloaded_path):
+            os.remove(downloaded_path)
 
         # Replace the content of the target cookies file
         with open(cookies_file_path, "w") as target_file:
