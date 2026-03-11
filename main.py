@@ -19,6 +19,7 @@ import pytz
 
 # 📦 Third-party Libraries
 import aiohttp
+from aiohttp import ClientSession
 import aiofiles
 import requests
 import asyncio
@@ -187,8 +188,6 @@ bot.add_handler(MessageHandler(auth.list_users_cmd, filters.command("users") & f
 bot.add_handler(MessageHandler(auth.my_plan_cmd, filters.command("plan") & filters.private))
 
 cookies_file_path = os.getenv("cookies_file_path", "youtube_cookies.txt")
-api_url = "http://master-api-v3.vercel.app/"
-api_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNzkxOTMzNDE5NSIsInRnX3VzZXJuYW1lIjoi4p61IFtvZmZsaW5lXSIsImlhdCI6MTczODY5MjA3N30.SXzZ1MZcvMp5sGESj0hBKSghhxJ3k1GTWoBUbivUe1I"
 cwtoken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE3NTExOTcwNjQsImNvbiI6eyJpc0FkbWluIjpmYWxzZSwiYXVzZXIiOiJVMFZ6TkdGU2NuQlZjR3h5TkZwV09FYzBURGxOZHowOSIsImlkIjoiVWtoeVRtWkhNbXRTV0RjeVJIcEJUVzExYUdkTlp6MDkiLCJmaXJzdF9uYW1lIjoiVWxadVFXaFBaMnAwSzJsclptVXpkbGxXT0djMlREWlRZVFZ5YzNwdldXNXhhVEpPWjFCWFYyd3pWVDA5IiwiZW1haWwiOiJWSGgyWjB0d2FUZFdUMVZYYmxoc2FsZFJSV2xrY0RWM2FGSkRSU3RzV0c5M1pDOW1hR0kxSzBOeVRUMDkiLCJwaG9uZSI6IldGcFZSSFZOVDJFeGNFdE9Oak4zUzJocmVrNHdRVDA5IiwiYXZhdGFyIjoiSzNWc2NTOHpTMHAwUW5sa2JrODNSRGx2ZWtOaVVUMDkiLCJyZWZlcnJhbF9jb2RlIjoiWkdzMlpUbFBORGw2Tm5OclMyVTRiRVIxTkVWb1FUMDkiLCJkZXZpY2VfdHlwZSI6ImFuZHJvaWQiLCJkZXZpY2VfdmVyc2lvbiI6IlEoQW5kcm9pZCAxMC4wKSIsImRldmljZV9tb2RlbCI6IlhpYW9taSBNMjAwN0oyMENJIiwicmVtb3RlX2FkZHIiOiI0NC4yMDIuMTkzLjIyMCJ9fQ.ONBsbnNwCQQtKMK2h18LCi73e90s2Cr63ZaIHtYueM-Gt5Z4sF6Ay-SEaKaIf1ir9ThflrtTdi5eFkUGIcI78R1stUUch_GfBXZsyg7aVyH2wxm9lKsFB2wK3qDgpd0NiBoT-ZsTrwzlbwvCFHhMp9rh83D4kZIPPdbp5yoA_06L0Zr4fNq3S328G8a8DtboJFkmxqG2T1yyVE2wLIoR3b8J3ckWTlT_VY2CCx8RjsstoTrkL8e9G5ZGa6sksMb93ugautin7GKz-nIz27pCr0h7g9BCoQWtL69mVC5xvVM3Z324vo5uVUPBi1bCG-ptpD9GWQ4exOBk9fJvGo-vRg"
 photologo = 'https://i.ibb.co/v6Vr7HCt/1000003297.png' #https://i.ibb.co/v6Vr7HCt/1000003297.png
 photoyt = 'https://i.ibb.co/v6Vr7HCt/1000003297.png' #https://i.ibb.co/v6Vr7HCt/1000003297.png
@@ -482,55 +481,8 @@ async def txt_handler(bot: Client, m: Message):
     try:    
         # Read file content with explicit encoding
         with open(x, "r", encoding='utf-8') as f:
-            content = f.read()
+            full_content = f.read()
             
-        # Debug: Print file content
-        print(f"File content: {content[:500]}...")  # Print first 500 chars
-            
-        content = content.split("\n")
-        content = [line.strip() for line in content if line.strip()]  # Remove empty lines
-        
-        # Logging parsed links
-        print("--- PARSED LINKS START ---")
-
-        # Debug: Print number of lines
-        print(f"Number of lines: {len(content)}")
-        
-        links = []
-        for i in content:
-            if "://" in i:
-                parts = i.split("://", 1)
-                if len(parts) == 2:
-                    name = parts[0]
-                    url = parts[1]
-                    links.append([name, url])
-                    
-                if ".pdf" in url:
-                    pdf_count += 1
-                elif url.endswith((".png", ".jpeg", ".jpg")):
-                    img_count += 1
-                elif "v2" in url:
-                    v2_count += 1
-                elif "mpd" in url:
-                    mpd_count += 1
-                elif "m3u8" in url:
-                    m3u8_count += 1
-                elif "drm" in url:
-                    drm_count += 1
-                elif "youtu" in url:
-                    yt_count += 1
-                elif "zip" in url:
-                    zip_count += 1
-                else:
-                    other_count += 1
-                        
-        # Debug: Print found links
-        print(f"Found links: {len(links)}")
-        for i, link_data in enumerate(links):
-             print(f"Link {i}: Name='{link_data[0]}', URL='{link_data[1]}'")
-        print("--- PARSED LINKS END ---")
-
-        
     except UnicodeDecodeError:
         await m.reply_text("<b>❌ File encoding error! Please make sure the file is saved with UTF-8 encoding.</b>")
         os.remove(x)
@@ -539,14 +491,75 @@ async def txt_handler(bot: Client, m: Message):
         await m.reply_text(f"<b>🔹Error reading file: {str(e)}</b>")
         os.remove(x)
         return
+
+    # Split content into batches
+    raw_batches = full_content.split("##### Batch End Here #####")
+    batches = []
+
+    for idx, raw_batch in enumerate(raw_batches):
+        lines = [line.strip() for line in raw_batch.split('\n') if line.strip()]
+        if not lines:
+            continue
+
+        # Parse Batch Name
+        batch_name = None
+        first_line = lines[0]
+
+        # Check for "Name : URL" format in the first line
+        # User specified: "Only take the Course name which is the left side of the first link before : after the Batch end here message"
+        if " : " in first_line and "http" in first_line.split(" : ")[1]:
+            batch_name = first_line.split(" : ")[0].strip()
+            # Remove the first line from links processing as it is the batch header
+            lines = lines[1:]
+
+        batch_links = []
+        for line in lines:
+            if "://" in line:
+                parts = line.split("://", 1)
+                if len(parts) == 2:
+                    name = parts[0].strip()
+                    url = parts[1].strip()
+                    batch_links.append([name, url])
+
+        if batch_links:
+            batches.append({
+                "name": batch_name,
+                "links": batch_links
+            })
+
+    # Stats for the FIRST batch (for display purposes during setup)
+    first_batch_links = batches[0]["links"] if batches else []
     
+    # Calculate stats for the first batch to show to user
+    for link_data in first_batch_links:
+        url = link_data[1]
+        if ".pdf" in url:
+            pdf_count += 1
+        elif url.endswith((".png", ".jpeg", ".jpg")):
+            img_count += 1
+        elif "v2" in url:
+            v2_count += 1
+        elif "mpd" in url:
+            mpd_count += 1
+        elif "m3u8" in url:
+            m3u8_count += 1
+        elif "drm" in url:
+            drm_count += 1
+        elif "youtu" in url:
+            yt_count += 1
+        elif "zip" in url:
+            zip_count += 1
+        else:
+            other_count += 1
+
     await editable.edit(
-    f"**Total 🔗 links found are {len(links)}\n"
+    f"**Total Batches found: {len(batches)}\n"
+    f"First Batch Links: {len(first_batch_links)}\n"
     f"ᴘᴅғ : {pdf_count}   ɪᴍɢ : {img_count}   ᴠ𝟸 : {v2_count} \n"
     f"ᴢɪᴘ : {zip_count}   ᴅʀᴍ : {drm_count}   ᴍ𝟹ᴜ𝟾 : {m3u8_count}\n"
     f"ᴍᴘᴅ : {mpd_count}   ʏᴛ : {yt_count}\n"
     f"Oᴛʜᴇʀꜱ : {other_count}\n\n"
-    f"Send Your Index File ID Between 1-{len(links)} .**",
+    f"Send Your Index File ID Between 1-{len(first_batch_links)} (Only for 1st batch).**",
   
 )
     
@@ -559,15 +572,15 @@ async def txt_handler(bot: Client, m: Message):
     except asyncio.TimeoutError:
         raw_text = '1'
     
-    if int(raw_text) > len(links) :
-        await editable.edit(f"**🔹Enter number in range of Index (01-{len(links)})**")
+    if int(raw_text) > len(first_batch_links) :
+        await editable.edit(f"**🔹Enter number in range of Index (01-{len(first_batch_links)})**")
         processing_request = False  # Reset the processing flag
         await m.reply_text("**🔹Exiting Task......  **")
         return
     
     chat_id = editable.chat.id
     timeout_duration = 3 if auto_flags.get(chat_id) else 20
-    await editable.edit(f"**1. Enter Batch Name\n2.Send /d For TXT Batch Name**")
+    await editable.edit(f"**1. Enter Batch Name (Default/Fallback)\n2.Send /d For TXT Batch Name**")
     try:
         input1: Message = await bot.listen(editable.chat.id, timeout=timeout_duration)
         raw_text0 = input1.text
@@ -575,10 +588,7 @@ async def txt_handler(bot: Client, m: Message):
     except asyncio.TimeoutError:
         raw_text0 = '/d'
     
-    if raw_text0 == '/d':
-        b_name = file_name.replace('_', ' ')
-    else:
-        b_name = raw_text0
+    fallback_b_name = file_name.replace('_', ' ') if raw_text0 == '/d' else raw_text0
     
     chat_id = editable.chat.id
     timeout_duration = 3 if auto_flags.get(chat_id) else 20
@@ -707,45 +717,67 @@ async def txt_handler(bot: Client, m: Message):
     await editable.delete()
 
     try:
-        if raw_text == "1":
-            batch_message = await bot.send_message(chat_id=channel_id, text=f"<blockquote><b>🎯Target Batch : {b_name}</b></blockquote>")
-            if "/d" not in raw_text7:
-                await bot.send_message(chat_id=m.chat.id, text=f"<blockquote><b><i>🎯Target Batch : {b_name}</i></b></blockquote>\n\n🔄 Your Task is under processing, please check your Set Channel📱. Once your task is complete, I will inform you 📩")
-                await bot.send_message(chat_id=m.chat.id, text=f"<blockquote><b><i>🎯Target Batch : {b_name}</i></b></blockquote>\n\n🔄 Your Task is under processing, please check your Set Channel📱. Once your task is complete, I will inform you 📩")
-                await bot.pin_chat_message(channel_id, batch_message.id)
-                message_id = batch_message.id + 1
-                await bot.delete_messages(channel_id, message_id)
-                await bot.pin_chat_message(channel_id, message_id)
-        else:
-             if "/d" not in raw_text7:
-                await bot.send_message(chat_id=m.chat.id, text=f"<blockquote><b><i>🎯Target Batch : {b_name}</i></b></blockquote>\n\n🔄 Your Task is under processing, please check your Set Channel📱. Once your task is complete, I will inform you 📩")
+        await bot.send_message(chat_id=m.chat.id, text=f"<blockquote><b><i>🎯Processing {len(batches)} batches...</i></b></blockquote>\n\n🔄 Your Task is under processing, please check your Set Channel📱.")
     except Exception as e:
         await m.reply_text(f"**Fail Reason »**\n<blockquote><i>{e}</i></blockquote>\n\n✦𝐁𝐨𝐭 𝐌𝐚𝐝𝐞 𝐁𝐲 ✦ {CREDIT}🌟`")
 
-    failed_count = 0
-    count =int(raw_text)    
-    arg = int(raw_text)
-    try:
-        for i in range(arg-1, len(links)):
-            Vxy = links[i][1].replace("file/d/","uc?export=download&id=").replace("www.youtube-nocookie.com/embed", "youtu.be").replace("?modestbranding=1", "").replace("/view?usp=sharing","")
-            url = "https://" + Vxy
-            link0 = "https://" + Vxy
+    # Outer loop for batches
+    for batch_idx, batch_data in enumerate(batches):
+        b_name = batch_data["name"] if batch_data["name"] else fallback_b_name
+        links = batch_data["links"]
 
-            print(f"Processing Index {i}: Initial URL = {url}")
+        # Determine start index
+        # For first batch: use user input (arg). For subsequent: 1
+        if batch_idx == 0:
+            count = int(raw_text)
+            arg = int(raw_text)
+        else:
+            count = 1
+            arg = 1
 
-            name1 = links[i][0].replace("(", "[").replace(")", "]").replace("_", "").replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
-            if "," in raw_text3:
-                 name = f'{PRENAME} {name1[:60]}'
-            else:
-                 name = f'{name1[:60]}'
-                 
-            user_id = m.from_user.id
-            
-            if "visionias" in url:
-                async with ClientSession() as session:
-                    async with session.get(url, headers={'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9', 'Accept-Language': 'en-US,en;q=0.9', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive', 'Pragma': 'no-cache', 'Referer': 'http://www.visionias.in/', 'Sec-Fetch-Dest': 'iframe', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Site': 'cross-site', 'Upgrade-Insecure-Requests': '1', 'User-Agent': 'Mozilla/5.0 (Linux; Android 12; RMX2121) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Mobile Safari/537.36', 'sec-ch-ua': '"Chromium";v="107", "Not=A?Brand";v="24"', 'sec-ch-ua-mobile': '?1', 'sec-ch-ua-platform': '"Android"',}) as resp:
-                        text = await resp.text()
-                        url = re.search(r"(https://.*?playlist.m3u8.*?)\"", text).group(1)
+        # Reset counters for this batch
+        failed_count = 0
+        pdf_count = 0
+        img_count = 0
+        v2_count = 0
+        mpd_count = 0
+        m3u8_count = 0
+        yt_count = 0
+        drm_count = 0
+        zip_count = 0
+        other_count = 0
+
+        # Send Batch Start Message
+        try:
+            batch_message = await bot.send_message(chat_id=channel_id, text=f"<blockquote><b>🎯Starting Batch {batch_idx+1}/{len(batches)} : {b_name}</b></blockquote>")
+            try:
+                await bot.pin_chat_message(channel_id, batch_message.id)
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+        try:
+            for i in range(arg-1, len(links)):
+                Vxy = links[i][1].replace("file/d/","uc?export=download&id=").replace("www.youtube-nocookie.com/embed", "youtu.be").replace("?modestbranding=1", "").replace("/view?usp=sharing","")
+                url = "https://" + Vxy
+                link0 = "https://" + Vxy
+
+                print(f"Processing Index {i}: Initial URL = {url}")
+
+                name1 = links[i][0].replace("(", "[").replace(")", "]").replace("_", "").replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
+                if "," in raw_text3:
+                     name = f'{PRENAME} {name1[:60]}'
+                else:
+                     name = f'{name1[:60]}'
+
+                user_id = m.from_user.id
+
+                if "visionias" in url:
+                    async with ClientSession() as session:
+                        async with session.get(url, headers={'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9', 'Accept-Language': 'en-US,en;q=0.9', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive', 'Pragma': 'no-cache', 'Referer': 'http://www.visionias.in/', 'Sec-Fetch-Dest': 'iframe', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Site': 'cross-site', 'Upgrade-Insecure-Requests': '1', 'User-Agent': 'Mozilla/5.0 (Linux; Android 12; RMX2121) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Mobile Safari/537.36', 'sec-ch-ua': '"Chromium";v="107", "Not=A?Brand";v="24"', 'sec-ch-ua-mobile': '?1', 'sec-ch-ua-platform': '"Android"',}) as resp:
+                            text = await resp.text()
+                            url = re.search(r"(https://.*?playlist.m3u8.*?)\"", text).group(1)
             
             if "acecwply" in url:
                 cmd = f'yt-dlp -o "{name}.%(ext)s" -f "bestvideo[height<={raw_text2}]+bestaudio" --hls-prefer-ffmpeg --no-keep-video --remux-video mkv --no-warning "{url}"'
@@ -803,64 +835,39 @@ async def txt_handler(bot: Client, m: Message):
 
             elif any(x in url for x in ["https://cpvod.testbook.com/", "classplusapp.com/drm/", "media-cdn.classplusapp.com", "media-cdn-alisg.classplusapp.com", "media-cdn-a.classplusapp.com", "tencdn.classplusapp", "videos.classplusapp", "webvideos.classplusapp.com"]):
                 print(f"Matched Classplus domain in URL: {url}")
-                # normalize cpvod -> media-cdn path used by API
-                url_norm = url.replace("https://cpvod.testbook.com/", "https://media-cdn.classplusapp.com/drm/")
-                api_url_call = f"https://cptest-ecru.vercel.app/ITsGOLU_OFFICIAL?url={url_norm}"
 
-                print(f"API Call: {api_url_call}")
+                # Construct the API URL with the specific token and user_id from vars.py
+                api_req_url = f"{api_url}/get_keys?url={url}@botupdatevip4u&user_id={API_USER_ID}&token={api_token}"
+                print(f"API Call: {api_req_url}")
 
                 keys_string = ""
                 mpd = None
+
                 try:
-                    resp = requests.get(api_url_call, timeout=30)
-                    # parse JSON safely
-                    try:
-                        data = resp.json()
-                        print(f"API Response: {data}")
-                    except Exception as e:
-                        print(f"JSON Parse Error: {e}")
-                        data = None
-            
-                    # DRM response (MPD + KEYS)
-                    if isinstance(data, dict) and "KEYS" in data and "MPD" in data:
-                        mpd = data.get("MPD")
-                        keys = data.get("KEYS") or []
+                    if "drm/" in url or "cpvod" in url:
+                        # DRM Logic
+                        mpd, keys = helper.get_mps_and_keys2(api_req_url)
                         url = mpd
-                        keys_string = " ".join([f"--key {k}" for k in keys])
-            
-                    # Non-DRM response (direct url)
-                    elif isinstance(data, dict) and "url" in data:
-                        url = data.get("url")
-                        keys_string = ""
-                        print(f"Updated URL from API: {url}")
-            
-                    else:
-                        print("Unexpected response format, trying helper fallback...")
-                        # Unexpected response format — fallback to helper
-                        try:
-                            res = helper.get_mps_and_keys2(url_norm)
-                            if res:
-                                mpd, keys = res
-                                url = mpd
-                                keys_string = " ".join([f"--key {k}" for k in keys])
-                            else:
-                                keys_string = ""
-                        except Exception as e:
-                            print(f"Helper fallback failed: {e}")
-                            keys_string = ""
-                except Exception as e:
-                    print(f"API request failed: {e}")
-                    # API failed — attempt helper fallback
-                    try:
-                        res = helper.get_mps_and_keys2(url_norm)
-                        if res:
-                            mpd, keys = res
-                            url = mpd
+                        if keys:
                             keys_string = " ".join([f"--key {k}" for k in keys])
                         else:
                             keys_string = ""
-                    except Exception:
+                    else:
+                        # Non-DRM Logic
+                        mpd = helper.get_mps_and_keys3(api_req_url)
+                        url = mpd
                         keys_string = ""
+
+                    print(f"Resolved URL: {url}")
+
+                except Exception as e:
+                    print(f"API request failed: {e}")
+                    # Fallback to old helper logic if new API fails?
+                    # Instructions imply replacing the logic entirely, but error handling is wise.
+                    # Given instructions: "Remove try/except blocks if present to fail fast on errors" in helper,
+                    # but here in main loop we might want to catch to proceed to next link or retry?
+                    # I will keep a basic try-except to log, but proceed.
+                    pass
             elif "tencdn.classplusapp" in url:
                 headers = {'host': 'api.classplusapp.com', 'x-access-token': f'{raw_text4}', 'accept-language': 'EN', 'api-version': '18', 'app-version': '1.4.73.2', 'build-number': '35', 'connection': 'Keep-Alive', 'content-type': 'application/json', 'device-details': 'Xiaomi_Redmi 7_SDK-32', 'device-id': 'c28d3cb16bbdac01', 'region': 'IN', 'user-agent': 'Mobile-Android', 'webengage-luid': '00000187-6fe4-5d41-a530-26186858be4c', 'accept-encoding': 'gzip'}
                 params = {"url": f"{url}"}
@@ -932,6 +939,59 @@ async def txt_handler(bot: Client, m: Message):
 )
                 ccm = f'[🎵]Audio Id : {str(count).zfill(3)}\n**Audio Title :** `{name1} .mp3`\n<blockquote><b>Batch Name :</b> {b_name}</blockquote>\n\n**Extracted by➤**{CR}\n'
                 cchtml = f'[🌐]Html Id : {str(count).zfill(3)}\n**Html Title :** `{name1} .html`\n<blockquote><b>Batch Name :</b> {b_name}</blockquote>\n\n**Extracted by➤**{CR}\n'
+
+                if "docs.google.com/document" in url:
+                    try:
+                        # Extract Doc ID
+                        doc_id_match = re.search(r'/d/([a-zA-Z0-9-_]+)', url)
+                        if doc_id_match:
+                            doc_id = doc_id_match.group(1)
+                            export_url = f"https://docs.google.com/document/d/{doc_id}/export?format=pdf"
+
+                            # Try to download
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(export_url) as resp:
+                                    if resp.status == 200:
+                                        # Success
+                                        pdf_path = f"{name}.pdf"
+                                        f = await aiofiles.open(pdf_path, mode='wb')
+                                        await f.write(await resp.read())
+                                        await f.close()
+
+                                        await bot.send_document(chat_id=channel_id, document=pdf_path, caption=cc1)
+                                        count += 1
+                                        pdf_count += 1 # Update stats
+                                        os.remove(pdf_path)
+                                        continue # Move to next link
+                                    else:
+                                        # Status not 200 (e.g. 403, 302 to login) -> Manual Note
+                                        raise Exception("Export failed")
+                        else:
+                            raise Exception("No Doc ID found")
+
+                    except Exception:
+                        # Fallback to Manual Note
+                        note_type = "PDF"
+                        if "assignment" in name.lower():
+                            note_type = "Assignment"
+                        elif "module" in name.lower():
+                            note_type = "Module"
+
+                        manual_note = (
+                            f"<b>Lesson Name:</b> {name}\n"
+                            f"<b>Lesson Link:</b> {url}\n"
+                            f"<b>Note:</b> Click the link to download {note_type} manually."
+                        )
+
+                        # Send to Channel
+                        await bot.send_message(chat_id=channel_id, text=manual_note)
+                        # Send to User (if different)
+                        if channel_id != m.chat.id:
+                             await bot.send_message(chat_id=m.chat.id, text=manual_note)
+
+                        count += 1
+                        # Do not increment failed_count as this is a handled fallback
+                        continue
                   
                 if "drive" in url:
                     try:
@@ -1087,39 +1147,32 @@ async def txt_handler(bot: Client, m: Message):
                 failed_count += 1
                 continue
 
-    except Exception as e:
-        await m.reply_text(e)
-        time.sleep(2)
+        except Exception as e:
+            await m.reply_text(str(e))
+            time.sleep(2)
 
-    success_count = len(links) - failed_count
-    video_count = v2_count + mpd_count + m3u8_count + yt_count + drm_count + zip_count + other_count
-    if raw_text7 == "/d":
-        await bot.send_message(
-    channel_id,
-    (
-        "<b>📬 ᴘʀᴏᴄᴇꜱꜱ ᴄᴏᴍᴘʟᴇᴛᴇᴅ</b>\n\n"
-        "<blockquote><b>📚 ʙᴀᴛᴄʜ ɴᴀᴍᴇ :</b> "
-        f"{b_name}</blockquote>\n"
+        # Batch Completion Stats
+        success_count = len(links) - failed_count - (arg-1) # Adjust for start index
+        video_count = v2_count + mpd_count + m3u8_count + yt_count + drm_count + zip_count + other_count
         
-        "╭────────────────\n"
-        f"├ 🖇️ ᴛᴏᴛᴀʟ ᴜʀʟꜱ : <code>{len(links)}</code>\n"
-        f"├ ✅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟ : <code>{success_count}</code>\n"
-        f"├ ❌ ꜰᴀɪʟᴇᴅ : <code>{failed_count}</code>\n"
-        "╰────────────────\n\n"
+        # Ensure counts are not negative (can happen if arg > len(links))
+        if success_count < 0: success_count = 0
 
-        "╭──────── 📦 ᴄᴀᴛᴇɢᴏʀʏ ────────\n"
-        f"├ 🎞️ ᴠɪᴅᴇᴏꜱ : <code>{video_count}</code>\n"
-        f"├ 📑 ᴘᴅꜰꜱ : <code>{pdf_count}</code>\n"
-        f"├ 🖼️ ɪᴍᴀɢᴇꜱ : <code>{img_count}</code>\n"
-        "╰────────────────────────────\n\n"
+        completion_text = (
+            f"<b>-┈━═.•°✅ Completed Batch {batch_idx+1}/{len(batches)} ✅°•.═━┈-</b>\n"
+            f"<blockquote><b>🎯Batch Name : {b_name}</b></blockquote>\n"
+            f"<blockquote>🔗 Total URLs: {len(links)} \n"
+            f"┃   ┠🔴 Total Failed URLs: {failed_count}\n"
+            f"┃   ┠🟢 Total Successful URLs: {success_count}\n"
+            f"┃   ┃   ┠🎥 Total Video URLs: {video_count}\n"
+            f"┃   ┃   ┠📄 Total PDF URLs: {pdf_count}\n"
+            f"┃   ┃   ┠📸 Total IMAGE URLs: {img_count}</blockquote>\n"
+        )
         
-        "<i>ᴇxᴛʀᴀᴄᴛᴇᴅ ʙʏ ᴡɪᴢᴀʀᴅ ʙᴏᴛꜱ 🤖</i>"
-    )
-)
+        await bot.send_message(channel_id, completion_text)
 
-    else:
-        await bot.send_message(channel_id, f"<b>-┈━═.•°✅ Completed ✅°•.═━┈-</b>\n<blockquote><b>🎯Batch Name : {b_name}</b></blockquote>\n<blockquote>🔗 Total URLs: {len(links)} \n┃   ┠🔴 Total Failed URLs: {failed_count}\n┃   ┠🟢 Total Successful URLs: {success_count}\n┃   ┃   ┠🎥 Total Video URLs: {video_count}\n┃   ┃   ┠📄 Total PDF URLs: {pdf_count}\n┃   ┃   ┠📸 Total IMAGE URLs: {img_count}</blockquote>\n")
-        await bot.send_message(m.chat.id, f"<blockquote><b>✅ Your Task is completed, please check your Set Channel📱</b></blockquote>")
+    # Final "All Batches Completed" message
+    await bot.send_message(m.chat.id, f"<blockquote><b>✅ All {len(batches)} batches completed, please check your Set Channel📱</b></blockquote>")
 
 
 
