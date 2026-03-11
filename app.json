@@ -9,7 +9,7 @@
   ],
   "repository": "https://github.com/Dev-Thanos/TXT-LEECH-BOT",
   "success_url": "https://t.me/CoderThanos",
-  "stack": "container",
+  "stack": "heroku-24",
   "env": {
     "API_ID": {
       "description": "𝑬𝒏𝒕𝒆𝒓 𝒀𝒐𝒖𝒓 𝑨𝒑𝒊 𝑰𝑫",
@@ -44,7 +44,7 @@
     },
     {
       "url": "heroku/python"
-    },       
+    },
     {
       "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest.git"
     }
@@ -52,7 +52,7 @@
   "formation": {
     "worker": {
       "quantity": 1,
-      "size": "standard-2x"
+      "size": "eco"
     }
   }
 }
