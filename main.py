@@ -775,7 +775,7 @@ async def txt_handler(bot: Client, m: Message):
             user_id = m.from_user.id
             
             if "visionias" in url:
-                async with ClientSession() as session:
+                async with aiohttp.ClientSession() as session:
                     async with session.get(url, headers={'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9', 'Accept-Language': 'en-US,en;q=0.9', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive', 'Pragma': 'no-cache', 'Referer': 'http://www.visionias.in/', 'Sec-Fetch-Dest': 'iframe', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Site': 'cross-site', 'Upgrade-Insecure-Requests': '1', 'User-Agent': 'Mozilla/5.0 (Linux; Android 12; RMX2121) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Mobile Safari/537.36', 'sec-ch-ua': '"Chromium";v="107", "Not=A?Brand";v="24"', 'sec-ch-ua-mobile': '?1', 'sec-ch-ua-platform': '"Android"',}) as resp:
                         text = await resp.text()
                         url = re.search(r"(https://.*?playlist.m3u8.*?)\"", text).group(1)
@@ -878,10 +878,10 @@ async def txt_handler(bot: Client, m: Message):
                 url = response.json()['url']  
            
             elif 'videos.classplusapp' in url:
-                url = requests.get(f'https://api.classplusapp.com/cams/uploader/video/jw-signed-url?url={url}', headers={'x-access-token': f'{cptoken}'}).json()['url']
+                url = requests.get(f'https://api.classplusapp.com/cams/uploader/video/jw-signed-url?url={url}', headers={'x-access-token': f'{raw_text4}'}).json()['url']
             
             elif 'media-cdn.classplusapp.com' in url or 'media-cdn-alisg.classplusapp.com' in url or 'media-cdn-a.classplusapp.com' in url: 
-                headers = {'host': 'api.classplusapp.com', 'x-access-token': f'{cptoken}', 'accept-language': 'EN', 'api-version': '18', 'app-version': '1.4.73.2', 'build-number': '35', 'connection': 'Keep-Alive', 'content-type': 'application/json', 'device-details': 'Xiaomi_Redmi 7_SDK-32', 'device-id': 'c28d3cb16bbdac01', 'region': 'IN', 'user-agent': 'Mobile-Android', 'webengage-luid': '00000187-6fe4-5d41-a530-26186858be4c', 'accept-encoding': 'gzip'}
+                headers = {'host': 'api.classplusapp.com', 'x-access-token': f'{raw_text4}', 'accept-language': 'EN', 'api-version': '18', 'app-version': '1.4.73.2', 'build-number': '35', 'connection': 'Keep-Alive', 'content-type': 'application/json', 'device-details': 'Xiaomi_Redmi 7_SDK-32', 'device-id': 'c28d3cb16bbdac01', 'region': 'IN', 'user-agent': 'Mobile-Android', 'webengage-luid': '00000187-6fe4-5d41-a530-26186858be4c', 'accept-encoding': 'gzip'}
                 params = {"url": f"{url}"}
                 response = requests.get('https://api.classplusapp.com/cams/uploader/video/jw-signed-url', headers=headers, params=params)
                 url   = response.json()['url']
@@ -1059,7 +1059,7 @@ async def txt_handler(bot: Client, m: Message):
                         res_file = await helper.download_and_decrypt_video(url, cmd, name, appxkey)  
                         filename = res_file  
                         await prog.delete(True) 
-                        if os.exists(filename):
+                        if os.path.exists(filename):
                             await helper.send_vid(bot, m, cc, filename, thumb, name, prog, channel_id, watermark=watermark)
                             count += 1
                         else:
@@ -1188,7 +1188,71 @@ async def text_handler(bot: Client, m: Message):
             res = "UN"
     except Exception:
             res = "UN"
-    # ... rest of the function logic would continue here ...
+
+    # ── Download and send logic ──────────────────────────────────────────────
+    import time as _time
+    os.makedirs("downloads", exist_ok=True)
+    ts = int(_time.time())
+    name1 = "video"
+    name  = f"downloads/vid_{m.chat.id}_{ts}"
+
+    # Normalise Google Drive / YouTube-nocookie URLs exactly like the /drm handler
+    Vxy = link.replace("file/d/", "uc?export=download&id=") \
+               .replace("www.youtube-nocookie.com/embed", "youtu.be") \
+               .replace("?modestbranding=1", "") \
+               .replace("/view?usp=sharing", "") \
+               .replace("/view?usp=drivesdk", "")
+    if not Vxy.startswith("http"):
+        Vxy = "https://" + Vxy
+    url = Vxy
+
+    # ── Google Drive ─────────────────────────────────────────────────────────
+    if "drive.google.com" in url or "docs.google.com" in url:
+        await editable.edit("⬇️ Downloading from Google Drive…\n<i>This may take a while for large files.</i>")
+        try:
+            import gdown, tempfile as _tempfile
+            with _tempfile.TemporaryDirectory() as tmpdir:
+                out = gdown.download(url, output=tmpdir + "/", quiet=True, fuzzy=True)
+                if not out or not os.path.exists(out):
+                    await editable.edit(
+                        "❌ Google Drive download failed.\n"
+                        "Make sure the file is shared as <b>Anyone with the link</b>."
+                    )
+                    return
+                fname = os.path.basename(out)
+                fsize = os.path.getsize(out) / (1024 * 1024)
+                await editable.edit(f"⬆️ Uploading <b>{fname}</b> ({fsize:.1f} MB)…")
+                await m.reply_document(document=out, caption=f"`{fname}`\n\n<i>Downloaded by {CREDIT}</i>")
+                await editable.delete()
+        except Exception as e:
+            await editable.edit(f"❌ Google Drive error:\n<code>{str(e)[:300]}</code>")
+        return
+
+    # ── Build yt-dlp command ─────────────────────────────────────────────────
+    if "youtu" in url or "youtube.com" in url:
+        ytf = f"bv*[height<={raw_text2}][ext=mp4]+ba[ext=m4a]/b[height<=?{raw_text2}][ext=mp4]/b"
+        ytcookie = "--cookies youtube_cookies.txt" if os.path.exists("youtube_cookies.txt") else ""
+        cmd = f'yt-dlp {ytcookie} -f "{ytf}" "{url}" -o "{name}.%(ext)s" -R 25 --fragment-retries 25'
+    elif ".m3u8" in url or "m3u8" in url:
+        cmd = f'yt-dlp -f "b[height<={raw_text2}]/bv[height<={raw_text2}]+ba/b" --hls-prefer-ffmpeg "{url}" -o "{name}.%(ext)s" -R 25 --fragment-retries 25'
+    else:
+        cmd = f'yt-dlp -f "b[height<={raw_text2}]/bv[height<={raw_text2}]+ba/b/bv+ba" "{url}" -o "{name}.%(ext)s" -R 25 --fragment-retries 25'
+
+    prog = await editable.edit(
+        f"<i><b>📥 Downloading…</b></i>\n"
+        f"<blockquote><b>Quality:</b> {quality}\n<b>Link:</b> {url[:60]}…</blockquote>"
+    )
+    try:
+        res_file = await helper.download_video(url, cmd, name)
+        if not res_file or not os.path.exists(res_file):
+            await prog.edit("❌ Download failed. The link may be invalid or geo-restricted.")
+            return
+        await helper.send_vid(bot, m, quality, res_file, "/d", name1, prog, m.chat.id, watermark="/d")
+    except Exception as e:
+        try:
+            await prog.edit(f"❌ Download failed:\n<code>{str(e)[:300]}</code>")
+        except Exception:
+            pass
 
 # New Callback Handlers for the buttons
 @bot.on_callback_query(filters.regex("features"))
