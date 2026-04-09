@@ -36,7 +36,10 @@ import yt_dlp
 import tgcrypto
 from logs import logging
 from bs4 import BeautifulSoup
-from pytube import YouTube
+try:
+    from pytube import YouTube
+except ImportError:
+    YouTube = None
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 
