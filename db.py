@@ -293,6 +293,40 @@ class Database:
         except Exception as e:
             print(f"{Fore.RED}Admin check error: {str(e)}{Style.RESET_ALL}")
             return False
+    def is_channel_authorized(self, chat_id: int, bot_username: str = "ITsGOLU_UPLOADER") -> bool:
+        """
+        Check if a channel is authorized to use the bot.
+
+        Args:
+            chat_id: Telegram channel ID
+            bot_username: Bot username
+
+        Returns:
+            True if channel is authorized, False otherwise
+        """
+        try:
+            result = self.db.bot_settings.find_one({
+                "bot_username": bot_username,
+                "authorized_channels": chat_id
+            })
+            return result is not None
+        except Exception as e:
+            print(f"{Fore.RED}Channel auth check error: {str(e)}{Style.RESET_ALL}")
+            return False
+
+    def authorize_channel(self, chat_id: int, bot_username: str = "ITsGOLU_UPLOADER") -> bool:
+        """Add a channel to the authorized channels list."""
+        try:
+            self.db.bot_settings.update_one(
+                {"bot_username": bot_username},
+                {"$addToSet": {"authorized_channels": chat_id}},
+                upsert=True
+            )
+            return True
+        except Exception as e:
+            print(f"{Fore.RED}Authorize channel error: {str(e)}{Style.RESET_ALL}")
+            return False
+
     def get_log_channel(self, bot_username: str):
         """Get the log channel ID for a specific bot"""
         try:
