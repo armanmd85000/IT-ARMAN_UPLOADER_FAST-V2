@@ -2,14 +2,17 @@ import os
 from os import environ
 
 # API Configuration
-API_ID = int(os.environ.get("API_ID", ""))
+API_ID = int(os.environ.get("API_ID") or "0")
 API_HASH = os.environ.get("API_HASH", "")
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 
 CREDIT = os.environ.get("CREDIT", "𝐈𝐓'𝐬𝐆𝐎𝐋𝐔")
 # MongoDB Configuration
 DATABASE_NAME = os.environ.get("DATABASE_NAME", "CpprivateApi")
-DATABASE_URL = os.environ.get("DATABASE_URL", "mongodb+srv://itsgoluAPI:jrMHSipToKUEnmcp@cpprivateapi.ghhp3oz.mongodb.net/?appName=CpprivateApi")  # Add your own atlas db
+# Prefer MONGO_URL (explicit MongoDB), then fall back to hardcoded Atlas URL.
+# DATABASE_URL is intentionally skipped here because Replit auto-sets it to PostgreSQL.
+_FALLBACK_MONGO = "mongodb+srv://itsgoluAPI:jrMHSipToKUEnmcp@cpprivateapi.ghhp3oz.mongodb.net/?appName=CpprivateApi"
+DATABASE_URL = os.environ.get("MONGO_URL") or _FALLBACK_MONGO
 MONGO_URL = DATABASE_URL  # For auth system
 
 # Owner and Admin Configuration
@@ -22,7 +25,7 @@ try:
 except ValueError:
     OWNER_ID = 0
 
-ADMINS = [int(x) for x in os.environ.get("ADMINS", "").split()]  # Default to owner ID
+ADMINS = [int(x) for x in os.environ.get("ADMINS", "").split() if x.strip()]  # Default to owner ID
 
 # Channel Configuration
 PREMIUM_CHANNEL = ""
@@ -67,16 +70,3 @@ Please contact the admin to get access.</blockquote>""",
 
 <blockquote>Use format: {format}</blockquote>"""
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

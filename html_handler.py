@@ -32,7 +32,7 @@ def categorize_urls(urls):
             videos.append((name, new_url))
 
         elif "d1d34p8vz63oiq.cloudfront.net/" in url:
-            new_url = f"https://anonymouspwplayer-0e5a3f512dec.herokuapp.com/pw?url={url}&token={your_working_token}"
+            new_url = f"https://anonymouspwplayer-0e5a3f512dec.herokuapp.com/pw?url={url}&token="
             videos.append((name, new_url))
                     
         elif "youtube.com/embed" in url:

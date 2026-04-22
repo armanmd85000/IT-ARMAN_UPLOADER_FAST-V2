@@ -1,9 +1,7 @@
 build:
   docker:
+    web: Dockerfile
     worker: Dockerfile
 run:
-  worker: python3 main.py
-
-  # for heroku deployment...add this bulidpack.  
-#  https://github.com/heroku/heroku-buildpack-activestorage-preview
-
+  web: gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 120 app:app
+  worker: bash -c "aria2c --enable-rpc --rpc-listen-all --daemon=true && python3 main.py"

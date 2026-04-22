@@ -1153,6 +1153,145 @@ async def txt_handler(bot: Client, m: Message):
 
 
 
+@bot.on_message(filters.command(["tutedude", "td"]) & auth_filter)
+async def tutedude_handler(bot: Client, m: Message):
+    """
+    /tutedude <course_slug> [lecture_range]
+    Examples:
+      /tutedude riskmanagement          → list all lectures
+      /tutedude riskmanagement 1-5      → download lectures 1 to 5
+      /tutedude riskmanagement 3        → download lecture 3
+      /tutedude courses                 → list enrolled courses
+    """
+    import tutedude as td
+
+    args = m.text.split(maxsplit=2)[1:]  # drop command
+
+    # ── List enrolled courses ──────────────────────────────────────────────
+    if not args or args[0].lower() in ("courses", "list", "help"):
+        wait_msg = await m.reply_text("🔄 Fetching your enrolled courses…")
+        try:
+            enrolled = await td.get_enrolled_courses()
+            if not enrolled:
+                await wait_msg.edit("❌ No enrolled courses found.")
+                return
+            lines = ["📚 <b>Your Enrolled Courses</b>\n"]
+            for c in enrolled:
+                lines.append(f"• <code>{c.get('slug','?')}</code> — {c.get('title','?')}")
+            lines.append("\n<i>Use /tutedude &lt;slug&gt; to list lectures</i>")
+            await wait_msg.edit("\n".join(lines))
+        except Exception as e:
+            await wait_msg.edit(f"❌ Error: <code>{str(e)[:200]}</code>")
+        return
+
+    course_slug = args[0].strip().lower()
+    lecture_range = args[1].strip() if len(args) > 1 else None
+
+    wait_msg = await m.reply_text(f"🔄 Fetching lectures for <b>{course_slug}</b>…")
+
+    # ── Get lecture list ───────────────────────────────────────────────────
+    try:
+        lectures = await td.get_course_lectures(course_slug)
+    except Exception as e:
+        await wait_msg.edit(f"❌ Failed to get course content:\n<code>{str(e)[:300]}</code>")
+        return
+
+    if not lectures:
+        await wait_msg.edit(
+            f"❌ Course <code>{course_slug}</code> not found or has no lectures.\n"
+            f"Use /tutedude courses to see available slugs."
+        )
+        return
+
+    # ── Just list lectures (no range given) ───────────────────────────────
+    if not lecture_range:
+        listing = td.format_lecture_list(lectures, course_slug)
+        listing += f"\n\n<i>To download: /tutedude {course_slug} 1-{len(lectures)}</i>"
+        await wait_msg.edit(listing[:4000])
+        return
+
+    # ── Parse range and download ───────────────────────────────────────────
+    indices = td.parse_range(lecture_range, len(lectures))
+    if not indices:
+        await wait_msg.edit(f"❌ Invalid range: <code>{lecture_range}</code>")
+        return
+
+    selected = [lec for lec in lectures if lec["index"] in indices]
+    await wait_msg.edit(
+        f"📥 Downloading <b>{len(selected)}</b> lecture(s) from <b>{course_slug}</b>…\n"
+        f"<i>Quality: up to 480p</i>"
+    )
+
+    bot_info = await bot.get_me()
+    bot_username = bot_info.username
+    channel_id = db.get_log_channel(m.from_user.id, bot_username) or m.chat.id
+
+    os.makedirs("downloads", exist_ok=True)
+    success_count = 0
+    fail_count = 0
+
+    for i, lec in enumerate(selected, 1):
+        tp_id = lec["tpStreamId"]
+        title = lec["title"] or f"Lecture {lec['index']}"
+        safe_title = re.sub(r'[^\w\s-]', '', title)[:60].strip()
+        m3u8_url = td.get_m3u8_url(tp_id)
+        out_dir = f"downloads/td_{m.chat.id}_{int(time.time())}"
+        os.makedirs(out_dir, exist_ok=True)
+        out_file = f"{out_dir}/{lec['index']:02d}_{safe_title}"
+
+        prog_text = (
+            f"📥 [{i}/{len(selected)}] Downloading…\n"
+            f"<b>{lec['index']}.</b> {title[:50]}\n"
+            f"<i>Section: {lec['section'][:40]}</i>"
+        )
+        await wait_msg.edit(prog_text)
+
+        cmd = (
+            f'yt-dlp -f "best[height<=480]/b[height<=480]/b" '
+            f'--hls-prefer-ffmpeg --no-playlist '
+            f'-o "{out_file}.%(ext)s" '
+            f'--no-part -R 3 --fragment-retries 10 '
+            f'"{m3u8_url}"'
+        )
+
+        try:
+            res_file = await helper.download_video(m3u8_url, cmd, out_file)
+            if not res_file or not os.path.exists(res_file):
+                fail_count += 1
+                await bot.send_message(m.chat.id, f"❌ Failed: {lec['index']}. {title[:50]}")
+                continue
+
+            caption = (
+                f"🎬 <b>{lec['index']}. {title}</b>\n"
+                f"📂 <i>{lec['section']}</i>\n"
+                f"📚 <code>{course_slug}</code> | 🤖 @{bot_username}"
+            )
+            await helper.send_vid(
+                bot, m, "480p", res_file, "/d", safe_title, wait_msg,
+                channel_id, watermark=f"{course_slug}"
+            )
+            success_count += 1
+
+            # Cleanup
+            try:
+                os.remove(res_file)
+                os.rmdir(out_dir)
+            except Exception:
+                pass
+
+        except Exception as e:
+            fail_count += 1
+            await bot.send_message(m.chat.id, f"❌ Error on {lec['index']}. {title[:40]}:\n<code>{str(e)[:200]}</code>")
+
+        await asyncio.sleep(2)
+
+    await wait_msg.edit(
+        f"✅ <b>Tutedude Download Complete</b>\n"
+        f"📚 Course: <code>{course_slug}</code>\n"
+        f"✔ Success: {success_count} | ✖ Failed: {fail_count}"
+    )
+
+
 @bot.on_message(filters.text & filters.private)
 async def text_handler(bot: Client, m: Message):
     if m.from_user.is_bot:

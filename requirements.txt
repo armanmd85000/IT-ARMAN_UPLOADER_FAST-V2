@@ -25,7 +25,7 @@ mutagen==1.46.0
 ffmpeg-python==0.2.0
 pillow==11.1.0
 m3u8==6.0.0
-pytube==15.0.0
+gdown>=5.1.0
 wget==3.2
 
 motor
